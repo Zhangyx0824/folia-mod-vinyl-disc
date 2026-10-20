@@ -155,7 +155,7 @@ function mountVinyl(folium, container, ctx) {
     // the artwork (or the theme), so the record sits in its own light.
     const halo = document.createElement('div');
     halo.style.cssText = [
-        'position:absolute;inset:-14%;border-radius:50%;pointer-events:none;',
+        'position:absolute;inset:-12.6%;border-radius:50%;pointer-events:none;',
         'opacity:0;transition:opacity 0.5s ease;',
     ].join('');
     scene.appendChild(halo);
@@ -236,10 +236,11 @@ function mountVinyl(folium, container, ctx) {
     scene.appendChild(sheen);
 
     // ---- tonearm -----------------------------------------------------------
-    // A light, thin arm as in the reference: a small pivot disc at the top,
-    // two slim rod segments with a pronounced S-elbow, and a small capsule
-    // head shell. One SVG covering the scene; the whole arm rotates around the
-    // pivot and a CSS transition does the lift on pause. ViewBox 0..100.
+    // A light, thin arm as in the reference: a small pivot disc at the top, a
+    // long straight tube (70% of the arm) that flows into a rounded 30% bend,
+    // and a small capsule head shell. One SVG covering the scene; the whole
+    // arm rotates around the pivot and a CSS transition does the lift on
+    // pause. ViewBox 0..100.
     const arm = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     arm.setAttribute('viewBox', '0 0 100 100');
     arm.setAttribute('aria-hidden', 'true');
@@ -250,19 +251,19 @@ function mountVinyl(folium, container, ctx) {
     ].join('');
     arm.innerHTML = [
         '<defs>',
-        '<linearGradient id="vinylArmRod" x1="90" y1="-8" x2="60" y2="24" gradientUnits="userSpaceOnUse">',
+        '<linearGradient id="vinylArmRod" x1="90" y1="-8" x2="64.6" y2="29" gradientUnits="userSpaceOnUse">',
         '<stop offset="0" stop-color="#f4f4f6"/><stop offset="1" stop-color="#dcdce0"/></linearGradient>',
         '</defs>',
-        // upper rod: pivot -> elbow (long and nearly straight, like the real
-        // straight tube before the bend)
-        '<line x1="90" y1="-8" x2="80" y2="14" stroke="url(#vinylArmRod)" stroke-width="1.7" stroke-linecap="round"/>',
-        // lower rod: elbow -> head, kinked hard sideways toward the disc
-        // (~40 deg bend at the elbow, as on an S-shaped tonearm)
-        '<line x1="80" y1="14" x2="60" y2="24" stroke="#e6e6ea" stroke-width="2.1" stroke-linecap="round"/>',
+        // One continuous rod: pivot -> long straight tube -> rounded elbow ->
+        // short tail -> head. The elbow is filleted (quadratic) so the bend
+        // reads as a smooth curve rather than a kink.
+        '<path d="M 90 -8 L 77.95 18.42 Q 76.5 21.6 73.53 23.45 L 64.6 29"',
+        ' fill="none" stroke="url(#vinylArmRod)" stroke-width="1.9"',
+        ' stroke-linecap="round" stroke-linejoin="round"/>',
         // head shell: a small capsule continuing the lower rod
-        '<g transform="rotate(152 60 24)">',
-        '<rect x="54.5" y="21.5" width="11" height="5" rx="2.5" fill="#f2f2f4"/>',
-        '<circle cx="64.4" cy="24" r="0.95" fill="#3a3a3e"/>',
+        '<g transform="rotate(148 64.6 29)">',
+        '<rect x="59.1" y="26.5" width="11" height="5" rx="2.5" fill="#f2f2f4"/>',
+        '<circle cx="69" cy="29" r="0.95" fill="#3a3a3e"/>',
         '</g>',
         // pivot: white disc with a dark centre dot
         '<circle cx="90" cy="-8" r="4.3" fill="#f6f6f8"/>',
@@ -437,10 +438,10 @@ function mountVinyl(folium, container, ctx) {
         const { r, g, b } = rgb;
         halo.style.background = 'radial-gradient(circle at 50% 50%, '
             + `rgba(${r},${g},${b},0.55) 0%, `
-            + `rgba(${r},${g},${b},0.34) 40%, `
-            + `rgba(${r},${g},${b},0.14) 60%, `
-            + `rgba(${r},${g},${b},0) 76%)`;
-        halo.style.filter = `blur(${Math.round(diameter * 0.1)}px)`;
+            + `rgba(${r},${g},${b},0.34) 36%, `
+            + `rgba(${r},${g},${b},0.14) 54%, `
+            + `rgba(${r},${g},${b},0) 68.4%)`;
+        halo.style.filter = `blur(${Math.round(diameter * 0.09)}px)`;
         halo.style.opacity = '1';
     };
 

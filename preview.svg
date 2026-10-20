@@ -99,7 +99,7 @@
       <stop offset="0.8" stop-color="#c8773f" stop-opacity="0"/>
     </radialGradient>
     <filter id="soften" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="42"/>
+      <feGaussianBlur stdDeviation="38"/>
     </filter>
     <clipPath id="discClip"><circle cx="920" cy="400" r="250"/></clipPath>
     <clipPath id="labelClip"><circle cx="920" cy="400" r="180"/></clipPath>
@@ -114,8 +114,8 @@
     <g font-family="-apple-system,'PingFang SC',sans-serif" fill="#f5ede2">
       <text x="96" y="200" font-size="26" fill-opacity="0.28">Justin Timberlake / Carey Mulligan / Stark Sands</text>
       <text x="96" y="286" font-size="58" font-weight="700" fill-opacity="0.92">Five Hundred Miles</text>
-      <text x="96" y="380" font-size="40" font-weight="600" fill-opacity="0.30">Lord I can't go back home this-a-way</text>
-      <text x="96" y="466" font-size="46" font-weight="700" fill-opacity="0.98">If you miss the train I'm on</text>
+      <text x="96" y="380" font-size="40" font-weight="600" fill-opacity="0.30">Lord, I can't go back home</text>
+      <text x="96" y="466" font-size="46" font-weight="700" fill-opacity="0.98">If you miss the train</text>
       <text x="96" y="530" font-size="26" fill-opacity="0.45">若你错过了我搭乘的那班列车</text>
       <text x="96" y="606" font-size="40" font-weight="600" fill-opacity="0.30">You will know that I am gone</text>
       <text x="96" y="682" font-size="40" font-weight="600" fill-opacity="0.22">You can hear the whistle blow</text>
@@ -127,7 +127,7 @@
 
     <!-- ===== the vinyl ===== -->
     <!-- diffuse projection behind the record -->
-    <circle cx="920" cy="400" r="330" fill="url(#coverHalo)" filter="url(#soften)"/>
+    <circle cx="920" cy="400" r="297" fill="url(#coverHalo)" filter="url(#soften)"/>
     <circle cx="920" cy="400" r="250" fill="#000000" opacity="0.5"/>
     <circle cx="920" cy="400" r="252" fill="none" stroke="#000000" stroke-opacity="0.55" stroke-width="8"/>
 
@@ -157,11 +157,12 @@
 
     <!-- ===== tonearm: slim light arm, small pivot, capsule head ===== -->
     <g>
-      <line x1="1120" y1="110" x2="1070" y2="220" stroke="#f4f4f6" stroke-width="8.5" stroke-linecap="round"/>
-      <line x1="1070" y1="220" x2="970" y2="270" stroke="#e6e6ea" stroke-width="10.5" stroke-linecap="round"/>
-      <g transform="rotate(152 970 270)">
-        <rect x="942.5" y="257.5" width="55" height="25" rx="12.5" fill="#f2f2f4"/>
-        <circle cx="992" cy="270" r="4.8" fill="#3a3a3e"/>
+      <path d="M 1120 110 L 1059.75 242.1 Q 1052.5 258 1037.65 267.25 L 993 295"
+            fill="none" stroke="#f2f2f4" stroke-width="9.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+      <g transform="rotate(148 993 295)">
+        <rect x="965.5" y="282.5" width="55" height="25" rx="12.5" fill="#f2f2f4"/>
+        <circle cx="1015" cy="295" r="4.8" fill="#3a3a3e"/>
       </g>
       <circle cx="1120" cy="110" r="21.5" fill="#f6f6f8"/>
       <circle cx="1120" cy="110" r="9" fill="#2a2a2e"/>
