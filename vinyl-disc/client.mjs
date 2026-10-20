@@ -33,7 +33,7 @@ export default function activate(folium) {
             ],
         },
         {
-            key: 'discSize', type: 'number', defaultValue: 0.8, min: 0.45, max: 1, step: 0.01,
+            key: 'discSize', type: 'number', defaultValue: 0.62, min: 0.3, max: 1, step: 0.01,
             label: label('唱片大小', 'Disc size'),
             description: label('唱片直径占播放区高度的比例', 'Disc diameter as a fraction of the stage height'),
         },
@@ -58,9 +58,14 @@ export default function activate(folium) {
             description: label('碟面上一道固定的反光', 'A fixed light reflection on the disc'),
         },
         {
-            key: 'glow', type: 'boolean', defaultValue: false,
-            label: label('主题色光晕', 'Theme glow'),
-            description: label('用当前主题色给唱片加一圈柔和辉光', 'A soft halo in the current theme color around the disc'),
+            key: 'halo', type: 'select', defaultValue: 'cover',
+            label: label('弥散投影', 'Diffuse glow'),
+            description: label('唱片背后的柔和光晕；跟随封面会取当前封面的主色', 'A soft halo behind the disc; “cover” takes the dominant colour of the artwork'),
+            options: [
+                { value: 'off', label: label('关闭', 'Off') },
+                { value: 'cover', label: label('跟随封面', 'Cover colour') },
+                { value: 'theme', label: label('主题色', 'Theme colour') },
+            ],
         },
         {
             key: 'textScale', type: 'number', defaultValue: 1, min: 0.6, max: 1.8, step: 0.05,
@@ -145,6 +150,15 @@ function mountVinyl(folium, container, ctx) {
     const scene = document.createElement('div');
     scene.style.cssText = 'position:relative;aspect-ratio:1/1;';
     discBox.appendChild(scene);
+
+    // Diffuse halo behind the disc: a soft, blurred colour field taken from
+    // the artwork (or the theme), so the record sits in its own light.
+    const halo = document.createElement('div');
+    halo.style.cssText = [
+        'position:absolute;inset:-14%;border-radius:50%;pointer-events:none;',
+        'opacity:0;transition:opacity 0.5s ease;',
+    ].join('');
+    scene.appendChild(halo);
 
     // ---- the disc ----------------------------------------------------------
     const disc = document.createElement('div');
@@ -231,27 +245,27 @@ function mountVinyl(folium, container, ctx) {
     arm.setAttribute('aria-hidden', 'true');
     arm.style.cssText = [
         'position:absolute;inset:0;width:100%;height:100%;overflow:visible;',
-        'transform-origin:80% 9%;transform:rotate(-50deg);',
+        'transform-origin:90% -8%;transform:rotate(-50deg);',
         'transition:transform 0.9s cubic-bezier(0.3, 1.2, 0.45, 1);',
     ].join('');
     arm.innerHTML = [
         '<defs>',
-        '<linearGradient id="vinylArmRod" x1="80" y1="9" x2="66.5" y2="27.5" gradientUnits="userSpaceOnUse">',
+        '<linearGradient id="vinylArmRod" x1="90" y1="-8" x2="71" y2="25.5" gradientUnits="userSpaceOnUse">',
         '<stop offset="0" stop-color="#f4f4f6"/><stop offset="1" stop-color="#dcdce0"/></linearGradient>',
         '</defs>',
-        // upper rod: pivot -> elbow
-        '<line x1="80" y1="9" x2="72.5" y2="21" stroke="url(#vinylArmRod)" stroke-width="1.9" stroke-linecap="round"/>',
-        // lower rod: elbow -> head (a touch thicker, as on a real S-shaped arm)
-        '<line x1="72.5" y1="21" x2="66.5" y2="27.5" stroke="#e6e6ea" stroke-width="2.4" stroke-linecap="round"/>',
+        // upper rod: pivot -> elbow (long, slim, as on a real arm)
+        '<line x1="90" y1="-8" x2="78" y2="12" stroke="url(#vinylArmRod)" stroke-width="1.7" stroke-linecap="round"/>',
+        // lower rod: elbow -> head
+        '<line x1="78" y1="12" x2="71" y2="25.5" stroke="#e6e6ea" stroke-width="2.1" stroke-linecap="round"/>',
         // head shell: a small capsule continuing the lower rod
-        '<g transform="rotate(133 66.5 27.5)">',
-        '<rect x="61" y="25" width="11" height="5" rx="2.5" fill="#f2f2f4"/>',
-        '<circle cx="63.4" cy="27.5" r="0.95" fill="#3a3a3e"/>',
+        '<g transform="rotate(117 71 25.5)">',
+        '<rect x="65.5" y="23" width="11" height="5" rx="2.5" fill="#f2f2f4"/>',
+        '<circle cx="75.4" cy="25.5" r="0.95" fill="#3a3a3e"/>',
         '</g>',
         // pivot: white disc with a dark centre dot
-        '<circle cx="80" cy="9" r="4.3" fill="#f6f6f8"/>',
-        '<circle cx="80" cy="9" r="1.8" fill="#2a2a2e"/>',
-        '<circle cx="80" cy="9" r="4.3" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="0.5"/>',
+        '<circle cx="90" cy="-8" r="4.3" fill="#f6f6f8"/>',
+        '<circle cx="90" cy="-8" r="1.8" fill="#2a2a2e"/>',
+        '<circle cx="90" cy="-8" r="4.3" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="0.5"/>',
     ].join('');
     arm.style.filter = 'drop-shadow(0 3px 4px rgba(0,0,0,0.45))';
     scene.appendChild(arm);
@@ -263,17 +277,23 @@ function mountVinyl(folium, container, ctx) {
     let height = 1;
     let lastLineIndex = null;
     let lastTextKey = '';
+    let diameterPx = 0;
+    // Dominant colour of the current artwork, used by the diffuse halo. Null
+    // until extracted (or when the artwork cannot be read), then the theme
+    // accent is used instead.
+    let coverColor = null;
+    let coverUrlForColor = null;
 
     const settings = () => {
         const v = ctx.getSettings() || {};
         return {
             discSide: v.discSide === 'left' ? 'left' : 'right',
-            discSize: num(v.discSize, 0.8),
+            discSize: num(v.discSize, 0.62),
             spinSeconds: num(v.spinSeconds, 20),
-            labelRatio: num(v.labelRatio, 0.42),
+            labelRatio: num(v.labelRatio, 0.72),
             showArm: v.showArm !== false,
             sheen: v.sheen !== false,
-            glow: v.glow === true,
+            halo: v.halo === 'off' || v.halo === 'theme' ? v.halo : 'cover',
             textScale: num(v.textScale, 1),
             showNext: v.showNext !== false,
         };
@@ -361,13 +381,13 @@ function mountVinyl(folium, container, ctx) {
     const applyLayout = () => {
         if (disposed) return;
         const s = settings();
-        const theme = ctx.getTheme();
 
         // Diameter: a fraction of the stage height, and never more than the
-        // room the text leaves (the disc gets at most ~46% of the stage width).
+        // room the text leaves.
         let diameter = height * s.discSize;
-        diameter = Math.min(diameter, width * 0.46);
-        diameter = Math.max(72, Math.round(diameter));
+        diameter = Math.min(diameter, width * 0.42);
+        diameter = Math.max(64, Math.round(diameter));
+        diameterPx = diameter;
         scene.style.width = `${diameter}px`;
         scene.style.height = `${diameter}px`;
 
@@ -396,15 +416,30 @@ function mountVinyl(folium, container, ctx) {
         arm.style.transform = !paused && s.showArm ? 'rotate(0deg)' : 'rotate(-50deg)';
         sheen.style.display = s.sheen ? '' : 'none';
 
-        // Shadow / glow.
-        const shadow = '0 18px 60px rgba(0,0,0,0.45)';
-        if (s.glow) {
-            const accent = hexOr(theme.accentColor, '#8a7cff');
-            disc.style.boxShadow = `0 0 ${Math.round(diameter * 0.1)}px ${accent}66, `
-                + `0 0 ${Math.round(diameter * 0.28)}px ${accent}33, ${shadow}`;
-        } else {
-            disc.style.boxShadow = shadow;
+        // Ground shadow stays neutral; the coloured part is the halo behind it.
+        disc.style.boxShadow = '0 18px 60px rgba(0,0,0,0.45)';
+        applyHalo(diameter);
+    };
+
+    // A wide, soft bloom in the artwork's own colour, behind the record — the
+    // "diffuse projection" the album light casts on the page.
+    const applyHalo = (diameter) => {
+        const s = settings();
+        if (s.halo === 'off' || !diameter) {
+            halo.style.opacity = '0';
+            return;
         }
+        const fallback = hexOr(ctx.getTheme()?.accentColor, '#8a7cff');
+        const color = s.halo === 'cover' && coverColor ? coverColor : fallback;
+        const rgb = hexToRgb(color) || { r: 138, g: 124, b: 255 };
+        const { r, g, b } = rgb;
+        halo.style.background = 'radial-gradient(circle at 50% 50%, '
+            + `rgba(${r},${g},${b},0.55) 0%, `
+            + `rgba(${r},${g},${b},0.34) 40%, `
+            + `rgba(${r},${g},${b},0.14) 60%, `
+            + `rgba(${r},${g},${b},0) 76%)`;
+        halo.style.filter = `blur(${Math.round(diameter * 0.1)}px)`;
+        halo.style.opacity = '1';
     };
 
     const applyCover = () => {
@@ -414,13 +449,28 @@ function mountVinyl(folium, container, ctx) {
             if (labelImg.getAttribute('src') !== cover) labelImg.setAttribute('src', cover);
             labelImg.style.display = '';
             labelFallback.style.display = 'none';
+
+            // The halo follows the artwork's dominant colour; each cover is
+            // extracted once and cached.
+            if (coverUrlForColor !== cover) {
+                coverUrlForColor = cover;
+                coverColor = null;
+                void dominantColor(cover).then((color) => {
+                    if (disposed || coverUrlForColor !== cover) return;
+                    coverColor = color;
+                    applyHalo(diameterPx);
+                });
+            }
         } else {
             labelImg.removeAttribute('src');
             labelImg.style.display = 'none';
             labelFallback.style.display = '';
+            coverUrlForColor = null;
+            coverColor = null;
             const song = ctx.song;
             fallbackTitle.textContent = song?.title || '♪';
             fallbackArtist.textContent = song?.artist || '';
+            applyHalo(diameterPx);
         }
     };
 
@@ -470,6 +520,123 @@ const num = (value, fallback) => (Number.isFinite(Number(value)) ? Number(value)
 
 const hexOr = (value, fallback) =>
     (typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback);
+
+const hexToRgb = (hex) => {
+    if (typeof hex !== 'string') return null;
+    const m = /^#([0-9a-fA-F]{6})$/.exec(hex.trim());
+    if (!m) return null;
+    const value = parseInt(m[1], 16);
+    return { r: (value >> 16) & 255, g: (value >> 8) & 255, b: value & 255 };
+};
+
+const rgbToHsl = (r, g, b) => {
+    const rn = r / 255;
+    const gn = g / 255;
+    const bn = b / 255;
+    const max = Math.max(rn, gn, bn);
+    const min = Math.min(rn, gn, bn);
+    const l = (max + min) / 2;
+    if (max === min) return [0, 0, l];
+    const d = max - min;
+    const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    let h;
+    if (max === rn) h = ((gn - bn) / d + (gn < bn ? 6 : 0)) / 6;
+    else if (max === gn) h = ((bn - rn) / d + 2) / 6;
+    else h = ((rn - gn) / d + 4) / 6;
+    return [h, s, l];
+};
+
+const hueToRgb = (p, q, t) => {
+    let tn = t;
+    if (tn < 0) tn += 1;
+    if (tn > 1) tn -= 1;
+    if (tn < 1 / 6) return p + (q - p) * 6 * tn;
+    if (tn < 1 / 2) return q;
+    if (tn < 2 / 3) return p + (q - p) * (2 / 3 - tn) * 6;
+    return p;
+};
+
+const hslToRgb = (h, s, l) => {
+    if (s === 0) {
+        const v = Math.round(l * 255);
+        return [v, v, v];
+    }
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    return [hueToRgb(p, q, h + 1 / 3), hueToRgb(p, q, h), hueToRgb(p, q, h - 1 / 3)]
+        .map((v) => Math.round(v * 255));
+};
+
+const toHex = (r, g, b) => `#${[r, g, b].map((v) => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0')).join('')}`;
+
+// One entry per cover URL, so switching back and forth costs nothing.
+const COLOR_CACHE = new Map();
+
+/**
+ * Dominant colour of an image, as a `#rrggbb` string (or null).
+ * A 24×24 downscale is sampled, each pixel weighted by saturation and by how
+ * close its lightness is to mid-grey (a big white border or a black sleeve
+ * should not wash the result out), then the average is pushed back into a
+ * usable saturation/lightness for a glow.
+ *
+ * Reading the canvas can throw on a tainted canvas (a cross-origin cover
+ * without CORS headers); that is expected and simply means "no colour".
+ */
+const dominantColor = (url) => new Promise((resolve) => {
+    if (COLOR_CACHE.has(url)) {
+        resolve(COLOR_CACHE.get(url));
+        return;
+    }
+    let settled = false;
+    const finish = (color) => {
+        if (settled) return;
+        settled = true;
+        if (color) COLOR_CACHE.set(url, color);
+        resolve(color);
+    };
+
+    const img = document.createElement('img');
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+        try {
+            const size = 24;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const g = canvas.getContext('2d', { willReadFrequently: true });
+            g.drawImage(img, 0, 0, size, size);
+            const { data } = g.getImageData(0, 0, size, size);
+
+            let sum = 0;
+            let r = 0;
+            let gr = 0;
+            let b = 0;
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i + 3] < 160) continue;
+                const [, s, l] = rgbToHsl(data[i], data[i + 1], data[i + 2]);
+                const weight = (0.08 + s * s) * Math.max(0, 1 - Math.abs(l - 0.5) * 1.3);
+                if (weight <= 0) continue;
+                r += data[i] * weight;
+                gr += data[i + 1] * weight;
+                b += data[i + 2] * weight;
+                sum += weight;
+            }
+            if (sum <= 0) {
+                finish(null);
+                return;
+            }
+            const [h, s, l] = rgbToHsl(r / sum, gr / sum, b / sum);
+            const [rr, gg, bb] = hslToRgb(h, Math.min(0.85, Math.max(0.42, s * 1.2 + 0.08)), Math.min(0.62, Math.max(0.46, l)));
+            finish(toHex(rr, gg, bb));
+        } catch {
+            finish(null);
+        }
+    };
+    img.onerror = () => finish(null);
+    // A cover that never loads must not leave the halo waiting forever.
+    setTimeout(() => finish(null), 4000);
+    img.src = url;
+});
 
 // Theme helpers are Folium 1.3+; fall back to the theme's own family fields.
 const safeFontStack = (folium, theme) => {

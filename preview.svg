@@ -91,8 +91,18 @@
       <stop offset="0" stop-color="#6e6e74"/>
       <stop offset="1" stop-color="#333338"/>
     </radialGradient>
-    <clipPath id="discClip"><circle cx="920" cy="400" r="300"/></clipPath>
-    <clipPath id="labelClip"><circle cx="920" cy="400" r="216"/></clipPath>
+    <!-- diffuse halo in the artwork's colour -->
+    <radialGradient id="coverHalo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#c8773f" stop-opacity="0.55"/>
+      <stop offset="0.42" stop-color="#c8773f" stop-opacity="0.32"/>
+      <stop offset="0.62" stop-color="#c8773f" stop-opacity="0.12"/>
+      <stop offset="0.8" stop-color="#c8773f" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soften" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="42"/>
+    </filter>
+    <clipPath id="discClip"><circle cx="920" cy="400" r="250"/></clipPath>
+    <clipPath id="labelClip"><circle cx="920" cy="400" r="180"/></clipPath>
     <clipPath id="pageClip"><rect x="0" y="0" width="1280" height="800" rx="18"/></clipPath>
   </defs>
 
@@ -116,16 +126,17 @@
     </g>
 
     <!-- ===== the vinyl ===== -->
-    <!-- glow + shadow -->
-    <circle cx="920" cy="400" r="300" fill="#000000" opacity="0.55" filter="url(#)"/>
-    <circle cx="920" cy="400" r="302" fill="none" stroke="#000000" stroke-opacity="0.6" stroke-width="8"/>
+    <!-- diffuse projection behind the record -->
+    <circle cx="920" cy="400" r="330" fill="url(#coverHalo)" filter="url(#soften)"/>
+    <circle cx="920" cy="400" r="250" fill="#000000" opacity="0.5"/>
+    <circle cx="920" cy="400" r="252" fill="none" stroke="#000000" stroke-opacity="0.55" stroke-width="8"/>
 
     <g clip-path="url(#discClip)">
-      <circle cx="920" cy="400" r="300" fill="url(#disc)"/>
-      <circle cx="920" cy="400" r="300" fill="url(#grooves)"/>
+      <circle cx="920" cy="400" r="250" fill="url(#disc)"/>
+      <circle cx="920" cy="400" r="250" fill="url(#grooves)"/>
       <!-- album cover label (72% of the disc) -->
       <g clip-path="url(#labelClip)">
-        <g transform="translate(920 400) scale(1.5652) translate(-920 -400)">
+        <g transform="translate(920 400) scale(1.3043) translate(-920 -400)">
           <rect x="782" y="262" width="276" height="276" fill="url(#coverSky)"/>
           <circle cx="920" cy="432" r="60" fill="url(#coverSun)"/>
           <rect x="782" y="472" width="276" height="66" fill="#1d2b30" opacity="0.85"/>
@@ -133,28 +144,28 @@
           <text x="920" y="521" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="8.5" letter-spacing="1.6" fill="#b9b2a4">ORIGINAL SOUNDTRACK</text>
         </g>
       </g>
-      <circle cx="920" cy="400" r="216" fill="none" stroke="#000000" stroke-opacity="0.65" stroke-width="2"/>
-      <circle cx="920" cy="400" r="216" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="3" stroke-dasharray="1 5"/>
+      <circle cx="920" cy="400" r="180" fill="none" stroke="#000000" stroke-opacity="0.65" stroke-width="2"/>
+      <circle cx="920" cy="400" r="180" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="3" stroke-dasharray="1 5"/>
       <!-- sheen -->
-      <circle cx="920" cy="400" r="300" fill="url(#sheen)"/>
-      <circle cx="920" cy="400" r="300" fill="url(#sheen2)"/>
+      <circle cx="920" cy="400" r="250" fill="url(#sheen)"/>
+      <circle cx="920" cy="400" r="250" fill="url(#sheen2)"/>
       <!-- spindle -->
-      <circle cx="920" cy="400" r="10" fill="#070707" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1.5"/>
+      <circle cx="920" cy="400" r="9" fill="#070707" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1.5"/>
       <!-- rim -->
-      <circle cx="920" cy="400" r="299" fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="2"/>
+      <circle cx="920" cy="400" r="249" fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="2"/>
     </g>
 
     <!-- ===== tonearm: slim light arm, small pivot, capsule head ===== -->
     <g>
-      <line x1="1100" y1="154" x2="1055" y2="226" stroke="#f4f4f6" stroke-width="11" stroke-linecap="round"/>
-      <line x1="1055" y1="226" x2="1019" y2="265" stroke="#e6e6ea" stroke-width="14" stroke-linecap="round"/>
-      <g transform="rotate(133 1019 265)">
-        <rect x="986" y="250" width="66" height="30" rx="15" fill="#f2f2f4"/>
-        <circle cx="1000" cy="265" r="5.7" fill="#3a3a3e"/>
+      <line x1="1120" y1="110" x2="1060" y2="210" stroke="#f4f4f6" stroke-width="8.5" stroke-linecap="round"/>
+      <line x1="1060" y1="210" x2="1025" y2="277.5" stroke="#e6e6ea" stroke-width="10.5" stroke-linecap="round"/>
+      <g transform="rotate(117 1025 277.5)">
+        <rect x="997.5" y="265" width="55" height="25" rx="12.5" fill="#f2f2f4"/>
+        <circle cx="1047" cy="277.5" r="4.8" fill="#3a3a3e"/>
       </g>
-      <circle cx="1100" cy="154" r="25.8" fill="#f6f6f8"/>
-      <circle cx="1100" cy="154" r="10.8" fill="#2a2a2e"/>
-      <circle cx="1100" cy="154" r="25.8" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="3"/>
+      <circle cx="1120" cy="110" r="21.5" fill="#f6f6f8"/>
+      <circle cx="1120" cy="110" r="9" fill="#2a2a2e"/>
+      <circle cx="1120" cy="110" r="21.5" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="2.5"/>
     </g>
   </g>
 </svg>
