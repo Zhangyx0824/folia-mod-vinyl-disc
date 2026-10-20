@@ -1,0 +1,11 @@
+{
+  "folium": 1,
+  "id": "vinyl-disc",
+  "name": "黑胶唱片",
+  "version": "1.0.0",
+  "author": "pomepii",
+  "description": "在播放界面加一张黑胶唱片：当前歌曲的封面作为碟心，播放时唱片旋转、唱臂落下，暂停时唱臂抬起、唱片停转。参考 QQ 音乐 / 网易云音乐的黑胶效果，位置、大小、转速等都可以调。",
+  "client": "client.mjs",
+  "permissions": ["stageLayers"],
+  "folia": ">=0.7.21 <0.8.0"
+}

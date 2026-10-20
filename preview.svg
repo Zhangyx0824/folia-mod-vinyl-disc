@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">
+  <defs>
+    <!-- page background -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17130f"/>
+      <stop offset="0.55" stop-color="#100d0b"/>
+      <stop offset="1" stop-color="#0a0808"/>
+    </linearGradient>
+    <radialGradient id="bgGlow" cx="0.78" cy="0.5" r="0.55">
+      <stop offset="0" stop-color="#8a5a3a" stop-opacity="0.20"/>
+      <stop offset="1" stop-color="#8a5a3a" stop-opacity="0"/>
+    </radialGradient>
+    <!-- vinyl disc -->
+    <radialGradient id="disc" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#262626"/>
+      <stop offset="0.3" stop-color="#1b1b1b"/>
+      <stop offset="0.7" stop-color="#121212"/>
+      <stop offset="1" stop-color="#0d0d0d"/>
+    </radialGradient>
+    <radialGradient id="grooves" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0.335" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.34" stop-color="#ffffff" stop-opacity="0.030"/>
+      <stop offset="0.35" stop-color="#ffffff" stop-opacity="0.004"/>
+      <stop offset="0.38" stop-color="#ffffff" stop-opacity="0.028"/>
+      <stop offset="0.39" stop-color="#ffffff" stop-opacity="0.004"/>
+      <stop offset="0.42" stop-color="#ffffff" stop-opacity="0.028"/>
+      <stop offset="0.43" stop-color="#ffffff" stop-opacity="0.004"/>
+      <stop offset="0.46" stop-color="#ffffff" stop-opacity="0.028"/>
+      <stop offset="0.47" stop-color="#ffffff" stop-opacity="0.004"/>
+      <stop offset="0.50" stop-color="#ffffff" stop-opacity="0.028"/>
+      <stop offset="0.51" stop-color="#ffffff" stop-opacity="0.004"/>
+      <stop offset="0.54" stop-color="#ffffff" stop-opacity="0.028"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0.004"/>
+      <stop offset="0.58" stop-color="#ffffff" stop-opacity="0.028"/>
+      <stop offset="0.59" stop-color="#ffffff" stop-opacity="0.004"/>
+      <stop offset="0.62" stop-color="#ffffff" stop-opacity="0.028"/>
+      <stop offset="0.63" stop-color="#ffffff" stop-opacity="0.004"/>
+      <stop offset="0.66" stop-color="#ffffff" stop-opacity="0.028"/>
+      <stop offset="0.67" stop-color="#ffffff" stop-opacity="0.004"/>
+      <stop offset="0.70" stop-color="#ffffff" stop-opacity="0.028"/>
+      <stop offset="0.71" stop-color="#ffffff" stop-opacity="0.004"/>
+      <stop offset="0.74" stop-color="#ffffff" stop-opacity="0.028"/>
+      <stop offset="0.75" stop-color="#ffffff" stop-opacity="0.004"/>
+      <stop offset="0.78" stop-color="#ffffff" stop-opacity="0.028"/>
+      <stop offset="0.79" stop-color="#ffffff" stop-opacity="0.004"/>
+      <stop offset="0.82" stop-color="#ffffff" stop-opacity="0.028"/>
+      <stop offset="0.83" stop-color="#ffffff" stop-opacity="0.004"/>
+      <stop offset="0.86" stop-color="#ffffff" stop-opacity="0.028"/>
+      <stop offset="0.87" stop-color="#ffffff" stop-opacity="0.004"/>
+      <stop offset="0.90" stop-color="#ffffff" stop-opacity="0.028"/>
+      <stop offset="0.91" stop-color="#ffffff" stop-opacity="0.004"/>
+      <stop offset="0.94" stop-color="#ffffff" stop-opacity="0.026"/>
+      <stop offset="0.95" stop-color="#ffffff" stop-opacity="0.004"/>
+      <stop offset="0.965" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.97" stop-color="#ffffff" stop-opacity="0.10"/>
+      <stop offset="0.978" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <!-- sheen -->
+    <linearGradient id="sheen" x1="0.1" y1="0" x2="0.6" y2="1">
+      <stop offset="0.0" stop-color="#ffffff" stop-opacity="0.10"/>
+      <stop offset="0.18" stop-color="#ffffff" stop-opacity="0.02"/>
+      <stop offset="0.35" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="sheen2" x1="0.9" y1="1" x2="0.5" y2="0.2">
+      <stop offset="0.0" stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="0.2" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <!-- stylized album cover: dusk over water -->
+    <linearGradient id="coverSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2c2440"/>
+      <stop offset="0.45" stop-color="#7a3f52"/>
+      <stop offset="0.72" stop-color="#d78a5b"/>
+      <stop offset="1" stop-color="#2a1c22"/>
+    </linearGradient>
+    <radialGradient id="coverSun" cx="0.5" cy="0.62" r="0.28">
+      <stop offset="0" stop-color="#ffd9a0"/>
+      <stop offset="0.6" stop-color="#f2a56a"/>
+      <stop offset="1" stop-color="#f2a56a" stop-opacity="0"/>
+    </radialGradient>
+    <!-- tonearm -->
+    <linearGradient id="rod" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9a9aa0"/>
+      <stop offset="1" stop-color="#5c5c62"/>
+    </linearGradient>
+    <radialGradient id="pivot" cx="0.35" cy="0.3" r="1">
+      <stop offset="0" stop-color="#d8d8dc"/>
+      <stop offset="1" stop-color="#55555b"/>
+    </radialGradient>
+    <radialGradient id="weight" cx="0.35" cy="0.3" r="1">
+      <stop offset="0" stop-color="#6e6e74"/>
+      <stop offset="1" stop-color="#333338"/>
+    </radialGradient>
+    <clipPath id="discClip"><circle cx="920" cy="400" r="300"/></clipPath>
+    <clipPath id="labelClip"><circle cx="920" cy="400" r="138"/></clipPath>
+    <clipPath id="pageClip"><rect x="0" y="0" width="1280" height="800" rx="18"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#pageClip)">
+    <rect width="1280" height="800" fill="url(#bg)"/>
+    <rect width="1280" height="800" fill="url(#bgGlow)"/>
+
+    <!-- faint lyric lines on the left -->
+    <g font-family="-apple-system,'PingFang SC',sans-serif" fill="#f5ede2">
+      <text x="96" y="200" font-size="26" fill-opacity="0.28">Justin Timberlake / Carey Mulligan / Stark Sands</text>
+      <text x="96" y="286" font-size="58" font-weight="700" fill-opacity="0.92">Five Hundred Miles</text>
+      <text x="96" y="380" font-size="40" font-weight="600" fill-opacity="0.30">Lord I can't go back home this-a-way</text>
+      <text x="96" y="466" font-size="46" font-weight="700" fill-opacity="0.98">If you miss the train I'm on</text>
+      <text x="96" y="530" font-size="26" fill-opacity="0.45">若你错过了我搭乘的那班列车</text>
+      <text x="96" y="606" font-size="40" font-weight="600" fill-opacity="0.30">You will know that I am gone</text>
+      <text x="96" y="682" font-size="40" font-weight="600" fill-opacity="0.22">You can hear the whistle blow</text>
+      <!-- progress bar -->
+      <rect x="96" y="740" width="560" height="4" rx="2" fill="#ffffff" fill-opacity="0.14"/>
+      <rect x="96" y="740" width="300" height="4" rx="2" fill="#ffffff" fill-opacity="0.55"/>
+      <circle cx="396" cy="742" r="6" fill="#ffffff" fill-opacity="0.9"/>
+    </g>
+
+    <!-- ===== the vinyl ===== -->
+    <!-- glow + shadow -->
+    <circle cx="920" cy="400" r="300" fill="#000000" opacity="0.55" filter="url(#)"/>
+    <circle cx="920" cy="400" r="302" fill="none" stroke="#000000" stroke-opacity="0.6" stroke-width="8"/>
+
+    <g clip-path="url(#discClip)">
+      <circle cx="920" cy="400" r="300" fill="url(#disc)"/>
+      <circle cx="920" cy="400" r="300" fill="url(#grooves)"/>
+      <!-- album cover label -->
+      <g clip-path="url(#labelClip)">
+        <rect x="782" y="262" width="276" height="276" fill="url(#coverSky)"/>
+        <circle cx="920" cy="432" r="60" fill="url(#coverSun)"/>
+        <rect x="782" y="472" width="276" height="66" fill="#1d2b30" opacity="0.85"/>
+        <text x="920" y="503" text-anchor="middle" font-family="-apple-system,'PingFang SC',sans-serif" font-size="15" font-weight="700" fill="#e8e2d6">INSIDE LLEWYN DAVIS</text>
+        <text x="920" y="521" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="8.5" letter-spacing="1.6" fill="#b9b2a4">ORIGINAL SOUNDTRACK</text>
+      </g>
+      <circle cx="920" cy="400" r="138" fill="none" stroke="#000000" stroke-opacity="0.65" stroke-width="2"/>
+      <circle cx="920" cy="400" r="138" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="3" stroke-dasharray="1 5"/>
+      <!-- sheen -->
+      <circle cx="920" cy="400" r="300" fill="url(#sheen)"/>
+      <circle cx="920" cy="400" r="300" fill="url(#sheen2)"/>
+      <!-- spindle -->
+      <circle cx="920" cy="400" r="10" fill="#070707" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1.5"/>
+      <!-- rim -->
+      <circle cx="920" cy="400" r="299" fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="2"/>
+    </g>
+
+    <!-- ===== tonearm (playing position): pivot top-right, head on the disc ===== -->
+    <g>
+      <!-- counterweight, opposite side of the pivot from the rod -->
+      <circle cx="1120" cy="78" r="17" fill="url(#weight)"/>
+      <line x1="1090" y1="120" x2="1002" y2="256" stroke="url(#rod)" stroke-width="7" stroke-linecap="round"/>
+      <!-- head shell at the rod end, stylus touching the disc -->
+      <g transform="rotate(-33 1002 256)">
+        <rect x="988" y="252" width="28" height="17" rx="5" fill="#2c2c2e" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1.5"/>
+        <path d="M 1002 269 L 1002 275" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2" stroke-linecap="round"/>
+      </g>
+      <!-- pivot -->
+      <circle cx="1090" cy="120" r="16" fill="url(#pivot)"/>
+      <circle cx="1090" cy="120" r="6.2" fill="#111111"/>
+      <circle cx="1090" cy="120" r="16" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1.6"/>
+    </g>
+  </g>
+</svg>
