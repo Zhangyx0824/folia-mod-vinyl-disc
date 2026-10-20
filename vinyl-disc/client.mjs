@@ -237,8 +237,8 @@ function mountVinyl(folium, container, ctx) {
 
     // ---- tonearm -----------------------------------------------------------
     // A light, thin arm as in the reference: a small pivot disc at the top,
-    // two slim rod segments with a slight elbow, and a small capsule head
-    // shell. One SVG covering the scene; the whole arm rotates around the
+    // two slim rod segments with a pronounced S-elbow, and a small capsule
+    // head shell. One SVG covering the scene; the whole arm rotates around the
     // pivot and a CSS transition does the lift on pause. ViewBox 0..100.
     const arm = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     arm.setAttribute('viewBox', '0 0 100 100');
@@ -250,17 +250,19 @@ function mountVinyl(folium, container, ctx) {
     ].join('');
     arm.innerHTML = [
         '<defs>',
-        '<linearGradient id="vinylArmRod" x1="90" y1="-8" x2="71" y2="25.5" gradientUnits="userSpaceOnUse">',
+        '<linearGradient id="vinylArmRod" x1="90" y1="-8" x2="60" y2="24" gradientUnits="userSpaceOnUse">',
         '<stop offset="0" stop-color="#f4f4f6"/><stop offset="1" stop-color="#dcdce0"/></linearGradient>',
         '</defs>',
-        // upper rod: pivot -> elbow (long, slim, as on a real arm)
-        '<line x1="90" y1="-8" x2="78" y2="12" stroke="url(#vinylArmRod)" stroke-width="1.7" stroke-linecap="round"/>',
-        // lower rod: elbow -> head
-        '<line x1="78" y1="12" x2="71" y2="25.5" stroke="#e6e6ea" stroke-width="2.1" stroke-linecap="round"/>',
+        // upper rod: pivot -> elbow (long and nearly straight, like the real
+        // straight tube before the bend)
+        '<line x1="90" y1="-8" x2="80" y2="14" stroke="url(#vinylArmRod)" stroke-width="1.7" stroke-linecap="round"/>',
+        // lower rod: elbow -> head, kinked hard sideways toward the disc
+        // (~40 deg bend at the elbow, as on an S-shaped tonearm)
+        '<line x1="80" y1="14" x2="60" y2="24" stroke="#e6e6ea" stroke-width="2.1" stroke-linecap="round"/>',
         // head shell: a small capsule continuing the lower rod
-        '<g transform="rotate(117 71 25.5)">',
-        '<rect x="65.5" y="23" width="11" height="5" rx="2.5" fill="#f2f2f4"/>',
-        '<circle cx="75.4" cy="25.5" r="0.95" fill="#3a3a3e"/>',
+        '<g transform="rotate(152 60 24)">',
+        '<rect x="54.5" y="21.5" width="11" height="5" rx="2.5" fill="#f2f2f4"/>',
+        '<circle cx="64.4" cy="24" r="0.95" fill="#3a3a3e"/>',
         '</g>',
         // pivot: white disc with a dark centre dot
         '<circle cx="90" cy="-8" r="4.3" fill="#f6f6f8"/>',
