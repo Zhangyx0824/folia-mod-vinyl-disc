@@ -92,7 +92,7 @@
       <stop offset="1" stop-color="#333338"/>
     </radialGradient>
     <clipPath id="discClip"><circle cx="920" cy="400" r="300"/></clipPath>
-    <clipPath id="labelClip"><circle cx="920" cy="400" r="138"/></clipPath>
+    <clipPath id="labelClip"><circle cx="920" cy="400" r="216"/></clipPath>
     <clipPath id="pageClip"><rect x="0" y="0" width="1280" height="800" rx="18"/></clipPath>
   </defs>
 
@@ -123,16 +123,18 @@
     <g clip-path="url(#discClip)">
       <circle cx="920" cy="400" r="300" fill="url(#disc)"/>
       <circle cx="920" cy="400" r="300" fill="url(#grooves)"/>
-      <!-- album cover label -->
+      <!-- album cover label (72% of the disc) -->
       <g clip-path="url(#labelClip)">
-        <rect x="782" y="262" width="276" height="276" fill="url(#coverSky)"/>
-        <circle cx="920" cy="432" r="60" fill="url(#coverSun)"/>
-        <rect x="782" y="472" width="276" height="66" fill="#1d2b30" opacity="0.85"/>
-        <text x="920" y="503" text-anchor="middle" font-family="-apple-system,'PingFang SC',sans-serif" font-size="15" font-weight="700" fill="#e8e2d6">INSIDE LLEWYN DAVIS</text>
-        <text x="920" y="521" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="8.5" letter-spacing="1.6" fill="#b9b2a4">ORIGINAL SOUNDTRACK</text>
+        <g transform="translate(920 400) scale(1.5652) translate(-920 -400)">
+          <rect x="782" y="262" width="276" height="276" fill="url(#coverSky)"/>
+          <circle cx="920" cy="432" r="60" fill="url(#coverSun)"/>
+          <rect x="782" y="472" width="276" height="66" fill="#1d2b30" opacity="0.85"/>
+          <text x="920" y="503" text-anchor="middle" font-family="-apple-system,'PingFang SC',sans-serif" font-size="15" font-weight="700" fill="#e8e2d6">INSIDE LLEWYN DAVIS</text>
+          <text x="920" y="521" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="8.5" letter-spacing="1.6" fill="#b9b2a4">ORIGINAL SOUNDTRACK</text>
+        </g>
       </g>
-      <circle cx="920" cy="400" r="138" fill="none" stroke="#000000" stroke-opacity="0.65" stroke-width="2"/>
-      <circle cx="920" cy="400" r="138" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="3" stroke-dasharray="1 5"/>
+      <circle cx="920" cy="400" r="216" fill="none" stroke="#000000" stroke-opacity="0.65" stroke-width="2"/>
+      <circle cx="920" cy="400" r="216" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="3" stroke-dasharray="1 5"/>
       <!-- sheen -->
       <circle cx="920" cy="400" r="300" fill="url(#sheen)"/>
       <circle cx="920" cy="400" r="300" fill="url(#sheen2)"/>
@@ -142,20 +144,17 @@
       <circle cx="920" cy="400" r="299" fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="2"/>
     </g>
 
-    <!-- ===== tonearm (playing position): pivot top-right, head on the disc ===== -->
+    <!-- ===== tonearm: slim light arm, small pivot, capsule head ===== -->
     <g>
-      <!-- counterweight, opposite side of the pivot from the rod -->
-      <circle cx="1120" cy="78" r="17" fill="url(#weight)"/>
-      <line x1="1090" y1="120" x2="1002" y2="256" stroke="url(#rod)" stroke-width="7" stroke-linecap="round"/>
-      <!-- head shell at the rod end, stylus touching the disc -->
-      <g transform="rotate(-33 1002 256)">
-        <rect x="988" y="252" width="28" height="17" rx="5" fill="#2c2c2e" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1.5"/>
-        <path d="M 1002 269 L 1002 275" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2" stroke-linecap="round"/>
+      <line x1="1100" y1="154" x2="1055" y2="226" stroke="#f4f4f6" stroke-width="11" stroke-linecap="round"/>
+      <line x1="1055" y1="226" x2="1019" y2="265" stroke="#e6e6ea" stroke-width="14" stroke-linecap="round"/>
+      <g transform="rotate(133 1019 265)">
+        <rect x="986" y="250" width="66" height="30" rx="15" fill="#f2f2f4"/>
+        <circle cx="1000" cy="265" r="5.7" fill="#3a3a3e"/>
       </g>
-      <!-- pivot -->
-      <circle cx="1090" cy="120" r="16" fill="url(#pivot)"/>
-      <circle cx="1090" cy="120" r="6.2" fill="#111111"/>
-      <circle cx="1090" cy="120" r="16" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1.6"/>
+      <circle cx="1100" cy="154" r="25.8" fill="#f6f6f8"/>
+      <circle cx="1100" cy="154" r="10.8" fill="#2a2a2e"/>
+      <circle cx="1100" cy="154" r="25.8" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="3"/>
     </g>
   </g>
 </svg>

@@ -43,7 +43,7 @@ export default function activate(folium) {
             description: label('真黑胶 33⅓ 转约 1.8 秒一圈；默认放慢到 20 秒更像装饰', 'A real 33⅓ rpm record turns once every 1.8s; 20s looks calmer'),
         },
         {
-            key: 'labelRatio', type: 'number', defaultValue: 0.42, min: 0.3, max: 0.6, step: 0.01,
+            key: 'labelRatio', type: 'number', defaultValue: 0.72, min: 0.5, max: 0.85, step: 0.01,
             label: label('封面占比', 'Cover size'),
             description: label('碟心封面占唱片直径的比例', 'The cover label as a fraction of the disc diameter'),
         },
@@ -160,11 +160,10 @@ function mountVinyl(folium, container, ctx) {
     const grooves = document.createElement('div');
     grooves.style.cssText = [
         'position:absolute;inset:0;border-radius:50%;',
+        // No centre mask: the cover label is drawn on top and covers it.
         'background:repeating-radial-gradient(circle at 50% 50%,',
         ' rgba(255,255,255,0.045) 0px, rgba(255,255,255,0.045) 1px,',
         ' rgba(255,255,255,0) 1px, rgba(255,255,255,0) 4px);',
-        'mask-image:radial-gradient(circle at 50% 50%, transparent 0 28%, #000 29% 97.5%, transparent 98%);',
-        '-webkit-mask-image:radial-gradient(circle at 50% 50%, transparent 0 28%, #000 29% 97.5%, transparent 98%);',
     ].join('');
     disc.appendChild(grooves);
 
@@ -223,34 +222,38 @@ function mountVinyl(folium, container, ctx) {
     scene.appendChild(sheen);
 
     // ---- tonearm -----------------------------------------------------------
+    // A light, thin arm as in the reference: a small pivot disc at the top,
+    // two slim rod segments with a slight elbow, and a small capsule head
+    // shell. One SVG covering the scene; the whole arm rotates around the
+    // pivot and a CSS transition does the lift on pause. ViewBox 0..100.
     const arm = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     arm.setAttribute('viewBox', '0 0 100 100');
     arm.setAttribute('aria-hidden', 'true');
     arm.style.cssText = [
         'position:absolute;inset:0;width:100%;height:100%;overflow:visible;',
-        'transform-origin:82% 8%;transform:rotate(-32deg);',
+        'transform-origin:80% 9%;transform:rotate(-50deg);',
         'transition:transform 0.9s cubic-bezier(0.3, 1.2, 0.45, 1);',
     ].join('');
     arm.innerHTML = [
         '<defs>',
-        '<linearGradient id="vinylArmRod" x1="82" y1="8" x2="57" y2="51" gradientUnits="userSpaceOnUse">',
-        '<stop offset="0" stop-color="#9a9aa0"/><stop offset="1" stop-color="#5c5c62"/></linearGradient>',
-        '<radialGradient id="vinylArmPivot" cx="0.35" cy="0.3" r="1">',
-        '<stop offset="0" stop-color="#d8d8dc"/><stop offset="1" stop-color="#55555b"/></radialGradient>',
-        '<radialGradient id="vinylArmWeight" cx="0.35" cy="0.3" r="1">',
-        '<stop offset="0" stop-color="#6e6e74"/><stop offset="1" stop-color="#333338"/></radialGradient>',
+        '<linearGradient id="vinylArmRod" x1="80" y1="9" x2="66.5" y2="27.5" gradientUnits="userSpaceOnUse">',
+        '<stop offset="0" stop-color="#f4f4f6"/><stop offset="1" stop-color="#dcdce0"/></linearGradient>',
         '</defs>',
-        '<circle cx="90" cy="-1" r="6.5" fill="url(#vinylArmWeight)"/>',
-        '<circle cx="90" cy="-1" r="6.5" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="0.7"/>',
-        '<line x1="82" y1="8" x2="57" y2="51" stroke="url(#vinylArmRod)" stroke-width="2.6" stroke-linecap="round"/>',
-        '<g transform="rotate(31 56 54.5)">',
-        '<rect x="50.5" y="51" width="11" height="7" rx="2" fill="#2c2c2e" stroke="rgba(255,255,255,0.22)" stroke-width="0.6"/>',
-        '<path d="M 55.5 58 L 56 60.6" stroke="rgba(255,255,255,0.55)" stroke-width="0.8" stroke-linecap="round"/>',
+        // upper rod: pivot -> elbow
+        '<line x1="80" y1="9" x2="72.5" y2="21" stroke="url(#vinylArmRod)" stroke-width="1.9" stroke-linecap="round"/>',
+        // lower rod: elbow -> head (a touch thicker, as on a real S-shaped arm)
+        '<line x1="72.5" y1="21" x2="66.5" y2="27.5" stroke="#e6e6ea" stroke-width="2.4" stroke-linecap="round"/>',
+        // head shell: a small capsule continuing the lower rod
+        '<g transform="rotate(133 66.5 27.5)">',
+        '<rect x="61" y="25" width="11" height="5" rx="2.5" fill="#f2f2f4"/>',
+        '<circle cx="63.4" cy="27.5" r="0.95" fill="#3a3a3e"/>',
         '</g>',
-        '<circle cx="82" cy="8" r="6.2" fill="url(#vinylArmPivot)"/>',
-        '<circle cx="82" cy="8" r="2.4" fill="#111"/>',
-        '<circle cx="82" cy="8" r="6.2" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="0.7"/>',
+        // pivot: white disc with a dark centre dot
+        '<circle cx="80" cy="9" r="4.3" fill="#f6f6f8"/>',
+        '<circle cx="80" cy="9" r="1.8" fill="#2a2a2e"/>',
+        '<circle cx="80" cy="9" r="4.3" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="0.5"/>',
     ].join('');
+    arm.style.filter = 'drop-shadow(0 3px 4px rgba(0,0,0,0.45))';
     scene.appendChild(arm);
 
     // ---- state -------------------------------------------------------------
@@ -390,7 +393,7 @@ function mountVinyl(folium, container, ctx) {
         disc.style.animationDuration = `${s.spinSeconds}s`;
         disc.style.animationPlayState = !paused && !ctx.staticMode ? 'running' : 'paused';
         arm.style.display = s.showArm ? '' : 'none';
-        arm.style.transform = !paused && s.showArm ? 'rotate(0deg)' : 'rotate(-32deg)';
+        arm.style.transform = !paused && s.showArm ? 'rotate(0deg)' : 'rotate(-50deg)';
         sheen.style.display = s.sheen ? '' : 'none';
 
         // Shadow / glow.
