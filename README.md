@@ -43,6 +43,12 @@
 
 首次启用时 Folia 会弹出确认窗口（列出内容指纹），确认后即可使用。
 
+也可以在 Folia 的模组面板里直接把本仓库的 zip 拖进去安装。
+
+## 模组市场
+
+本模组已提交至 [folium-compound](https://github.com/chthollyphile/folium-compound) 模组市场收录流程（`模组提交` issue）。通过审查并签名后，可在 Folia 内置模组市场搜索「vinyl-disc / 黑胶唱片」安装，安装后显示官方签名标识。
+
 ## 实现说明
 
 - 通过公开注册表 `folium.registries.visualizers` 注册一个动画模式（`hostLayers: { background: true, subtitles: false }`，歌词文本由模组自绘，避免与宿主字幕重复）。
