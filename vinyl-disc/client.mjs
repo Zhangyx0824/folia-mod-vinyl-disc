@@ -43,12 +43,12 @@ export default function activate(folium) {
             description: label('真黑胶 33⅓ 转约 1.8 秒一圈；默认放慢到 20 秒更像装饰', 'A real 33⅓ rpm record turns once every 1.8s; 20s looks calmer'),
         },
         {
-            key: 'labelRatio', type: 'number', defaultValue: 0.72, min: 0.5, max: 0.85, step: 0.01,
+            key: 'labelRatio', type: 'number', defaultValue: 0.6, min: 0.5, max: 0.85, step: 0.01,
             label: label('封面占比', 'Cover size'),
             description: label('碟心封面占唱片直径的比例', 'The cover label as a fraction of the disc diameter'),
         },
         {
-            key: 'showSpindle', type: 'boolean', defaultValue: true,
+            key: 'showSpindle', type: 'boolean', defaultValue: false,
             label: label('中心孔（黑色圆点）', 'Spindle hole'),
             description: label('盖在封面正中的黑色转轴孔圆点，关掉后封面完整无孔', 'The small black spindle dot on the cover; off leaves the artwork intact'),
         },
@@ -82,7 +82,7 @@ export default function activate(folium) {
             ],
         },
         {
-            key: 'textScale', type: 'number', defaultValue: 1, min: 0.6, max: 1.8, step: 0.05,
+            key: 'textScale', type: 'number', defaultValue: 1.25, min: 0.6, max: 1.8, step: 0.05,
             label: label('歌词字号', 'Lyric size'),
         },
         {
@@ -163,15 +163,13 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
 
     // QQ-style multi-line lyric view: a window of lines around the current
     // one — the active line bold and bright, its neighbours stepping down in
-    // size and opacity with distance. Rows are rebuilt only when the window
-    // actually moves.
+    // size and opacity with distance. Each row carries its own translation
+    // underneath, so translations follow their lines through the window.
+    // Rows are rebuilt only when the window actually moves.
     const lyricsBox = document.createElement('div');
     lyricsBox.style.cssText = 'display:flex;flex-direction:column;gap:0.9em;overflow:hidden;min-height:0;';
 
-    const translationEl = document.createElement('div');
-    translationEl.style.cssText = 'line-height:1.4;font-weight:400;';
-
-    textCol.append(lyricsBox, translationEl);
+    textCol.appendChild(lyricsBox);
 
     const discBox = document.createElement('div');
     discBox.style.cssText = 'flex:0 0 auto;position:relative;';
@@ -272,14 +270,18 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
     // translucency, highlights and shading give it a glass feel; the colour
     // stays the classic pale white regardless of artwork.
     const arm = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    arm.setAttribute('viewBox', '0 0 100 100');
+    // The canvas deliberately extends well past the scene (-40%..140%): the
+    // arm and its swing stay fully inside the element box. WebKit clips
+    // composited/filtered content near the element bounds, which used to
+    // leave a faint rectangular edge around the arm.
+    arm.setAttribute('viewBox', '-40 -40 180 180');
     arm.setAttribute('aria-hidden', 'true');
     arm.style.cssText = [
-        'position:absolute;inset:0;width:100%;height:100%;overflow:visible;',
-        'transform-origin:90% -8%;transform:rotate(-50deg);',
+        'position:absolute;inset:-40%;width:180%;height:180%;pointer-events:none;',
+        // Same pivot point (90, -8) expressed against the larger box.
+        'transform-origin:72.22% 17.78%;transform:rotate(-50deg);',
         'transition:transform 0.9s cubic-bezier(0.3, 1.2, 0.45, 1);',
     ].join('');
-    arm.style.filter = 'drop-shadow(0 3px 5px rgba(0,0,0,0.4))';
     scene.appendChild(arm);
 
     const armMarkup = () => [
@@ -287,7 +289,14 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
         '<linearGradient id="vinylArmRod" x1="90" y1="-8" x2="77" y2="21.2" gradientUnits="userSpaceOnUse">',
         '<stop offset="0" stop-color="#f4f4f6"/>',
         '<stop offset="1" stop-color="#dcdce0"/></linearGradient>',
+        // Shadow as an in-SVG filter with a generous user-space region: a CSS
+        // drop-shadow on the <svg> clips at the element box, and the rotated
+        // arm pokes outside it, leaving a visible rectangular edge.
+        '<filter id="vinylArmShadow" filterUnits="userSpaceOnUse" x="-40" y="-40" width="180" height="180">',
+        '<feDropShadow dx="0" dy="2.5" stdDeviation="2.2" flood-color="#000000" flood-opacity="0.4"/>',
+        '</filter>',
         '</defs>',
+        '<g filter="url(#vinylArmShadow)">',
         // One continuous rod: pivot -> long straight tube -> rounded elbow ->
         // short tail -> head on the grooves.
         '<path d="M 90 -8 L 85.64 12.07 Q 85 15 82.63 16.83 L 77 21.2"',
@@ -304,6 +313,7 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
         '<circle cx="90" cy="-8" r="4.3" fill="#f6f6f8" fill-opacity="0.9"/>',
         '<circle cx="90" cy="-8" r="4.3" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="0.45"/>',
         '<circle cx="90" cy="-8" r="1.8" fill="#2a2a2e"/>',
+        '</g>',
     ].join('');
     arm.innerHTML = armMarkup();
 
@@ -371,8 +381,6 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
             + `font-weight:600;letter-spacing:0.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
         artistEl.style.cssText = `font-size:${Math.round(base * 0.8)}px;color:${theme.secondaryColor};opacity:0.55;`
             + 'margin-top:0.35em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
-        translationEl.style.cssText = `font-size:${Math.round(base * 0.6)}px;color:${theme.secondaryColor};`
-            + 'opacity:0.78;line-height:1.4;font-weight:400;';
     };
 
     // Lines that are really song metadata ("标题 - 歌手" combos, as injected
@@ -465,25 +473,29 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
 
         const line = shown >= 0 ? ctx.lines[shown] : null;
         const text = line?.fullText?.trim() || '';
-        const translation = line?.translation?.trim() || '';
 
         const rowsKey = `${shown}|${rows.join(',')}|${text}`;
         if (rowsKey !== lastRowsKey) {
             lastRowsKey = rowsKey;
             lyricsBox.textContent = '';
             const { base, weight } = typography;
+            const dimColor = ctx.getTheme()?.secondaryColor || '';
             for (const i of rows) {
                 const distance = Math.abs(i - shown);
-                const row = document.createElement('div');
                 const active = distance === 0;
-                row.style.cssText = [
+                // Row wrapper: holds the distance fade and the entrance
+                // animation; the line and its translation fade together.
+                const row = document.createElement('div');
+                row.style.cssText = `opacity:${active ? '1' : String(Math.max(0.16, 0.62 - (distance - 1) * 0.15))};`;
+                if (active) row.dataset.active = 'true';
+                // The lyric line itself.
+                const lineEl = document.createElement('div');
+                lineEl.style.cssText = [
                     'line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;',
                     `font-size:${Math.round(active ? base : base * 0.8)}px;`,
                     `font-weight:${active ? weight : 600};`,
-                    `opacity:${active ? '1' : String(Math.max(0.16, 0.62 - (distance - 1) * 0.15))};`,
                 ].join('');
                 if (active) {
-                    row.dataset.active = 'true';
                     // Word-timed line: render one span per word so the frame
                     // loop can light words up as they are sung.
                     const words = ctx.lines[i].words;
@@ -509,36 +521,47 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
                                 '-webkit-text-fill-color:transparent;',
                                 'transform:scale(1);transition:transform 0.18s ease;',
                             ].join('');
-                            row.appendChild(span);
+                            lineEl.appendChild(span);
                         }
                     } else {
-                        row.textContent = ctx.lines[i].fullText.trim();
+                        lineEl.textContent = ctx.lines[i].fullText.trim();
                     }
                 } else {
-                    row.textContent = ctx.lines[i].fullText.trim();
+                    lineEl.textContent = ctx.lines[i].fullText.trim();
+                }
+                row.appendChild(lineEl);
+                // This line's own translation rides right below it, so every
+                // line in the window keeps its translation.
+                const trans = ctx.lines[i].translation?.trim();
+                if (trans) {
+                    const transEl = document.createElement('div');
+                    transEl.style.cssText = [
+                        `font-size:${Math.round(base * 0.62)}px;color:${dimColor};`,
+                        'font-weight:400;line-height:1.4;margin-top:0.18em;',
+                        `opacity:${active ? '0.78' : '0.7'};`,
+                        'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;',
+                    ].join('');
+                    transEl.textContent = trans;
+                    row.appendChild(transEl);
                 }
                 lyricsBox.appendChild(row);
             }
             activeWordSpans = Array.from(lyricsBox.querySelectorAll('[data-active] span'));
         }
 
-        translationEl.textContent = translation;
-        translationEl.style.display = translation ? '' : 'none';
-
         // Re-animate only when the line really changed (the clock ticks far
         // more often than lines change). Keyed on the *shown* line so passing
         // through blank lines does not re-run the animation.
-        const key = `${shown}|${text}|${translation}`;
+        const key = `${shown}|${text}`;
         const changed = key !== lastTextKey;
         lastTextKey = key;
 
         if (changed && animate && text && !ctx.staticMode) {
             const activeRow = lyricsBox.querySelector('[data-active]');
-            for (const el of [activeRow, translationEl]) {
-                if (!el) continue;
-                el.classList.remove('vinyl-line-in');
-                void el.offsetWidth;
-                el.classList.add('vinyl-line-in');
+            if (activeRow) {
+                activeRow.classList.remove('vinyl-line-in');
+                void activeRow.offsetWidth;
+                activeRow.classList.add('vinyl-line-in');
             }
         }
         lastLineIndex = index;
