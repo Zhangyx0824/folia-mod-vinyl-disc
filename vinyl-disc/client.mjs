@@ -337,6 +337,8 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
     let lastLineIndex = null;
     let lastTextKey = '';
     let lastRowsKey = '';
+    // Word spans of the active row, for the karaoke highlight in the frame loop.
+    let activeWordSpans = [];
     // The last non-empty line shown; held on screen through blank stretches.
     let holdIndex = null;
     let diameterPx = 0;
@@ -376,11 +378,17 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
         const display = ctx.getDisplay();
         const stack = safeFontStack(folium, theme);
         const weight = safeWeight(folium, theme, 700);
-        const base = Math.round(Math.min(Math.max(height * 0.055, 16), 64) * s.textScale * display.lyricsFontScale);
-        typography = { base, weight };
+        // Before the first layout the stage has no real size; keep the last
+        // typography instead of computing a tiny one off height = 1 (that was
+        // the "lyrics start small, then jump" bug on every new song).
+        if (height > 8) {
+            const base = Math.round(Math.min(Math.max(height * 0.033, 14), 48) * s.textScale * display.lyricsFontScale);
+            typography = { base, weight };
+        }
 
         textCol.style.fontFamily = stack;
         textCol.style.textAlign = s.textAlign;
+        const base = typography.base;
         titleEl.style.cssText = `font-size:${Math.round(base * 0.4)}px;color:${theme.secondaryColor};opacity:0.75;`
             + `font-weight:600;letter-spacing:0.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
         artistEl.style.cssText = `font-size:${Math.round(base * 0.34)}px;color:${theme.secondaryColor};opacity:0.55;`
@@ -416,6 +424,9 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
     })();
 
     const renderText = (animate) => {
+        // Nothing sensible to draw before the host has laid the stage out;
+        // rendering here would draw tiny text that jumps to size on resize.
+        if (height <= 8) return;
         const display = ctx.getDisplay();
         const s = settings();
         const showText = display.showText !== false;
@@ -490,16 +501,35 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
                 const distance = Math.abs(i - shown);
                 const row = document.createElement('div');
                 const active = distance === 0;
-                row.textContent = ctx.lines[i].fullText.trim();
                 row.style.cssText = [
                     'line-height:1.32;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;',
                     `font-size:${Math.round(active ? base : base * 0.8)}px;`,
                     `font-weight:${active ? weight : 600};`,
                     `opacity:${active ? '1' : String(Math.max(0.16, 0.62 - (distance - 1) * 0.15))};`,
                 ].join('');
-                if (active) row.dataset.active = 'true';
+                if (active) {
+                    row.dataset.active = 'true';
+                    // Word-timed line: render one span per word so the frame
+                    // loop can light words up as they are sung.
+                    const words = ctx.lines[i].words;
+                    if (words && words.length > 1) {
+                        row.dataset.karaoke = 'true';
+                        for (const w of words) {
+                            const span = document.createElement('span');
+                            span.textContent = w.text;
+                            span.dataset.start = String(w.startTime);
+                            span.dataset.end = String(w.endTime);
+                            row.appendChild(span);
+                        }
+                    } else {
+                        row.textContent = ctx.lines[i].fullText.trim();
+                    }
+                } else {
+                    row.textContent = ctx.lines[i].fullText.trim();
+                }
                 lyricsBox.appendChild(row);
             }
+            activeWordSpans = Array.from(lyricsBox.querySelectorAll('[data-active] span'));
         }
 
         translationEl.textContent = translation;
@@ -659,6 +689,19 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
     // every frame and are never announced). Bars fall back down smoothly.
     const spectrumLevels = new Float32Array(SPECTRUM_BARS);
     const offFrame = ctx.onFrame(() => {
+        // Karaoke: light each word up once its end time has passed. The sung
+        // colour is the current artwork's dominant colour (theme accent as a
+        // fallback); unsung words stay in the theme's lyric colour.
+        if (activeWordSpans.length) {
+            const t = ctx.lyricTime?.get?.() ?? 0;
+            const sungColor = coverColor || ctx.getTheme()?.accentColor || '#8a7cff';
+            for (const span of activeWordSpans) {
+                const end = Number(span.dataset.end);
+                const sung = Number.isFinite(end) && t >= end;
+                const want = sung ? sungColor : '';
+                if (span.style.color !== want) span.style.color = want;
+            }
+        }
         if (!settings().showSpectrum || spectrum.style.display === 'none') return;
         const data = ctx.audio?.getSpectrum?.();
         const n = data ? data.length : 0;
