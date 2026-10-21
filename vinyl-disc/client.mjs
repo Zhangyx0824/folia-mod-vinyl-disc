@@ -494,6 +494,21 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
                             span.textContent = w.text;
                             span.dataset.start = String(w.startTime);
                             span.dataset.end = String(w.endTime);
+                            // Smooth karaoke: the sung colour sweeps through
+                            // each word left-to-right (driven by --wp in the
+                            // frame loop) instead of flipping at word end.
+                            // --sung (the cover colour) is set on lyricsBox so
+                            // every span picks it up; currentColor keeps the
+                            // unsung part in the theme's lyric colour.
+                            span.style.cssText = [
+                                'display:inline-block;white-space:pre-wrap;',
+                                'background-image:linear-gradient(90deg,',
+                                'var(--sung,#fff) 0%,var(--sung,#fff) var(--wp,0%),',
+                                'currentColor var(--wp,0%),currentColor 100%);',
+                                '-webkit-background-clip:text;background-clip:text;',
+                                '-webkit-text-fill-color:transparent;',
+                                'transform:scale(1);transition:transform 0.18s ease;',
+                            ].join('');
                             row.appendChild(span);
                         }
                     } else {
@@ -667,17 +682,33 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
     // Spectrum: read the analyser inside the app's frame loop (values change
     // every frame and are never announced). Bars fall back down smoothly.
     const offFrame = ctx.onFrame(() => {
-        // Karaoke: light each word up once its end time has passed. The sung
-        // colour is the current artwork's dominant colour (theme accent as a
-        // fallback); unsung words stay in the theme's lyric colour.
+        // Karaoke: each word's sung colour sweeps in smoothly across the
+        // glyph as the word is sung (--wp 0% -> 100%), with a gentle scale
+        // pop while the word is active. The sung colour is the current
+        // artwork's dominant colour (theme accent as a fallback); unsung
+        // parts stay in the theme's lyric colour via currentColor.
         if (activeWordSpans.length) {
             const t = ctx.lyricTime?.get?.() ?? 0;
             const sungColor = coverColor || ctx.getTheme()?.accentColor || '#8a7cff';
+            if (lyricsBox.style.getPropertyValue('--sung') !== sungColor) {
+                lyricsBox.style.setProperty('--sung', sungColor);
+            }
             for (const span of activeWordSpans) {
+                const start = Number(span.dataset.start);
                 const end = Number(span.dataset.end);
-                const sung = Number.isFinite(end) && t >= end;
-                const want = sung ? sungColor : '';
-                if (span.style.color !== want) span.style.color = want;
+                let p = 0;
+                if (Number.isFinite(start) && Number.isFinite(end) && end > start) {
+                    p = t <= start ? 0 : t >= end ? 1 : (t - start) / (end - start);
+                } else if (Number.isFinite(end) && t >= end) {
+                    p = 1; // degenerate timing: keep the old light-on-end look
+                }
+                const singing = p > 0 && p < 1;
+                const scale = singing ? 'scale(1.06)' : 'scale(1)';
+                if (span.style.transform !== scale) span.style.transform = scale;
+                const wp = `${(p * 100).toFixed(1)}%`;
+                if (span.style.getPropertyValue('--wp') !== wp) {
+                    span.style.setProperty('--wp', wp);
+                }
             }
         }
     });
