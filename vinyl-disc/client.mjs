@@ -53,6 +53,20 @@ export default function activate(folium) {
             description: label('盖在封面正中的黑色转轴孔圆点，关掉后封面完整无孔', 'The small black spindle dot on the cover; off leaves the artwork intact'),
         },
         {
+            key: 'textAlign', type: 'select', defaultValue: 'left',
+            label: label('歌词对齐', 'Lyric alignment'),
+            description: label('歌词区内部的对齐方式（不影响唱片位置）', 'Alignment inside the lyric area, not the disc side'),
+            options: [
+                { value: 'left', label: label('居左', 'Left') },
+                { value: 'center', label: label('居中', 'Centered') },
+            ],
+        },
+        {
+            key: 'showSpectrum', type: 'boolean', defaultValue: false,
+            label: label('频谱', 'Spectrum'),
+            description: label('歌词下方随音乐跳动的频谱条', 'A row of audio-reactive bars under the lyrics'),
+        },
+        {
             key: 'showArm', type: 'boolean', defaultValue: true,
             label: label('唱臂', 'Tonearm'),
             description: label('播放时落在唱片上，暂停时抬起', 'Rests on the disc while playing, lifts on pause'),
@@ -78,7 +92,8 @@ export default function activate(folium) {
         },
         {
             key: 'showNext', type: 'boolean', defaultValue: true,
-            label: label('显示下一句', 'Show next line'),
+            label: label('显示后续歌词', 'Upcoming lines'),
+            description: label('当前句之后的歌词行（多行歌词视图）', 'Lines after the current one in the multi-line view'),
         },
     ];
 
@@ -151,16 +166,36 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
     header.append(titleEl, artistEl);
     textCol.appendChild(header);
 
-    const lineEl = document.createElement('div');
-    lineEl.style.cssText = 'line-height:1.32;font-weight:700;';
+    // QQ-style multi-line lyric view: a window of lines around the current
+    // one — the active line bold and bright, its neighbours stepping down in
+    // size and opacity with distance. Rows are rebuilt only when the window
+    // actually moves.
+    const lyricsBox = document.createElement('div');
+    lyricsBox.style.cssText = 'display:flex;flex-direction:column;gap:0.55em;overflow:hidden;min-height:0;';
 
     const translationEl = document.createElement('div');
-    translationEl.style.cssText = 'line-height:1.4;font-weight:400;margin-top:0.55em;';
+    translationEl.style.cssText = 'line-height:1.4;font-weight:400;';
 
-    const nextEl = document.createElement('div');
-    nextEl.style.cssText = 'line-height:1.4;font-weight:400;margin-top:1.5em;';
+    // Optional audio spectrum: a row of thin bars driven by the host's
+    // analyser, read inside the app's frame loop.
+    const SPECTRUM_BARS = 56;
+    const spectrum = document.createElement('div');
+    spectrum.style.cssText = [
+        'display:none;align-items:flex-end;gap:3px;height:54px;margin-top:2.2em;',
+        'flex:0 0 auto;overflow:hidden;',
+    ].join('');
+    const spectrumBars = [];
+    for (let i = 0; i < SPECTRUM_BARS; i += 1) {
+        const bar = document.createElement('i');
+        bar.style.cssText = [
+            'flex:1 1 0;min-width:2px;background:currentColor;border-radius:2px 2px 0 0;',
+            'transform-origin:bottom;transform:scaleY(0.04);will-change:transform;',
+        ].join('');
+        spectrum.appendChild(bar);
+        spectrumBars.push(bar);
+    }
 
-    textCol.append(lineEl, translationEl, nextEl);
+    textCol.append(lyricsBox, translationEl, spectrum);
 
     const discBox = document.createElement('div');
     discBox.style.cssText = 'flex:0 0 auto;position:relative;';
@@ -301,6 +336,7 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
     let height = 1;
     let lastLineIndex = null;
     let lastTextKey = '';
+    let lastRowsKey = '';
     // The last non-empty line shown; held on screen through blank stretches.
     let holdIndex = null;
     let diameterPx = 0;
@@ -325,12 +361,15 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
             halo: v.halo === 'off' || v.halo === 'theme' ? v.halo : 'cover',
             textScale: num(v.textScale, 1),
             showNext: v.showNext !== false,
+            textAlign: v.textAlign === 'center' ? 'center' : 'left',
+            showSpectrum: v.showSpectrum === true,
         };
     };
 
     // ---- text --------------------------------------------------------------
     // Font stack and weight come from the theme, the size from the theme scale,
     // the user's lyric size multiplier and the mod's own setting.
+    let typography = { base: 28, weight: 700 };
     const applyTypography = () => {
         const theme = ctx.getTheme();
         const s = settings();
@@ -338,22 +377,43 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
         const stack = safeFontStack(folium, theme);
         const weight = safeWeight(folium, theme, 700);
         const base = Math.round(Math.min(Math.max(height * 0.055, 16), 64) * s.textScale * display.lyricsFontScale);
+        typography = { base, weight };
 
         textCol.style.fontFamily = stack;
+        textCol.style.textAlign = s.textAlign;
         titleEl.style.cssText = `font-size:${Math.round(base * 0.4)}px;color:${theme.secondaryColor};opacity:0.75;`
             + `font-weight:600;letter-spacing:0.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
         artistEl.style.cssText = `font-size:${Math.round(base * 0.34)}px;color:${theme.secondaryColor};opacity:0.55;`
             + 'margin-top:0.35em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
-        lineEl.style.fontSize = `${base}px`;
-        lineEl.style.fontWeight = String(weight);
-        lineEl.style.color = theme.primaryColor;
-        translationEl.style.fontSize = `${Math.round(base * 0.6)}px`;
-        translationEl.style.color = theme.secondaryColor;
-        translationEl.style.opacity = '0.72';
-        nextEl.style.fontSize = `${Math.round(base * 0.58)}px`;
-        nextEl.style.color = theme.primaryColor;
-        nextEl.style.opacity = '0.26';
+        translationEl.style.cssText = `font-size:${Math.round(base * 0.6)}px;color:${theme.secondaryColor};`
+            + 'opacity:0.78;line-height:1.4;font-weight:400;';
+        spectrum.style.color = theme.primaryColor;
     };
+
+    // Lines that merely carry song metadata ("标题", "歌手", "标题 - 歌手")
+    // are not lyric lines; skip them wherever they appear.
+    const isMetaLine = (() => {
+        let cachedSong = null;
+        let cachedSet = new Set();
+        return (song) => {
+            if (song !== cachedSong) {
+                cachedSong = song;
+                cachedSet = new Set();
+                if (song) {
+                    for (const part of [song.title, song.artist]) {
+                        if (part) cachedSet.add(String(part).trim());
+                    }
+                    if (song.title && song.artist) {
+                        for (const sep of [' - ', '－', ' -', '- ', '-']) {
+                            cachedSet.add(`${song.title}${sep}${song.artist}`.trim());
+                            cachedSet.add(`${song.artist}${sep}${song.title}`.trim());
+                        }
+                    }
+                }
+            }
+            return cachedSet;
+        };
+    })();
 
     const renderText = (animate) => {
         const display = ctx.getDisplay();
@@ -373,6 +433,11 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
         const song = ctx.song;
         titleEl.textContent = song?.title || '';
         artistEl.textContent = song?.artist || '';
+        const meta = isMetaLine(song);
+        const usable = (i) => {
+            const t = ctx.lines[i]?.fullText?.trim();
+            return Boolean(t) && !meta.has(t);
+        };
 
         const index = ctx.staticMode && ctx.staticLineIndex !== null
             ? ctx.staticLineIndex
@@ -382,36 +447,76 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
         // until the next real line arrives — the default on every player.
         // `holdIndex` remembers it across renders.
         let shown = index;
-        while (shown >= 0 && !(ctx.lines[shown]?.fullText?.trim())) shown -= 1;
+        while (shown >= 0 && !usable(shown)) shown -= 1;
         if (shown >= 0) {
             holdIndex = shown;
-        } else if (index < 0 && holdIndex !== null && holdIndex < ctx.lines.length) {
+        } else if (index < 0 && holdIndex !== null && holdIndex < ctx.lines.length && usable(holdIndex)) {
             shown = holdIndex;
         }
-        const line = shown >= 0 ? ctx.lines[shown] : null;
-        let nextAt = index < 0 ? 0 : index + 1;
-        while (nextAt < ctx.lines.length && !(ctx.lines[nextAt]?.fullText?.trim())) nextAt += 1;
-        const nextLine = s.showNext && nextAt < ctx.lines.length ? ctx.lines[nextAt] : null;
 
+        // The multi-line window: up to 2 lines before and 4 after the current
+        // one, opacity stepping down with distance.
+        const BEFORE = 2;
+        const AFTER = 4;
+        const rows = [];
+        let count = 0;
+        for (let i = shown - 1; i >= 0 && count < BEFORE; i -= 1) {
+            if (usable(i)) {
+                rows.unshift(i);
+                count += 1;
+            }
+        }
+        if (shown >= 0) rows.push(shown);
+        if (s.showNext) {
+            count = 0;
+            for (let i = shown + 1; i < ctx.lines.length && count < AFTER; i += 1) {
+                if (usable(i)) {
+                    rows.push(i);
+                    count += 1;
+                }
+            }
+        }
+
+        const line = shown >= 0 ? ctx.lines[shown] : null;
         const text = line?.fullText?.trim() || '';
         const translation = line?.translation?.trim() || '';
-        const nextText = nextLine?.fullText?.trim() || '';
+
+        const rowsKey = `${shown}|${rows.join(',')}|${text}`;
+        if (rowsKey !== lastRowsKey) {
+            lastRowsKey = rowsKey;
+            lyricsBox.textContent = '';
+            const { base, weight } = typography;
+            for (const i of rows) {
+                const distance = Math.abs(i - shown);
+                const row = document.createElement('div');
+                const active = distance === 0;
+                row.textContent = ctx.lines[i].fullText.trim();
+                row.style.cssText = [
+                    'line-height:1.32;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;',
+                    `font-size:${Math.round(active ? base : base * 0.8)}px;`,
+                    `font-weight:${active ? weight : 600};`,
+                    `opacity:${active ? '1' : String(Math.max(0.16, 0.62 - (distance - 1) * 0.15))};`,
+                ].join('');
+                if (active) row.dataset.active = 'true';
+                lyricsBox.appendChild(row);
+            }
+        }
+
+        translationEl.textContent = translation;
+        translationEl.style.display = translation ? '' : 'none';
+        spectrum.style.display = s.showSpectrum ? 'flex' : 'none';
 
         // Re-animate only when the line really changed (the clock ticks far
         // more often than lines change). Keyed on the *shown* line so passing
         // through blank lines does not re-run the animation.
-        const key = `${shown}|${text}|${translation}|${nextText}`;
+        const key = `${shown}|${text}|${translation}`;
         const changed = key !== lastTextKey;
         lastTextKey = key;
 
-        lineEl.textContent = text;
-        translationEl.textContent = translation;
-        translationEl.style.display = translation ? '' : 'none';
-        nextEl.textContent = nextText;
-        nextEl.style.display = nextText ? '' : 'none';
-
         if (changed && animate && text && !ctx.staticMode) {
-            for (const el of [lineEl, translationEl]) {
+            const activeRow = lyricsBox.querySelector('[data-active]');
+            for (const el of [activeRow, translationEl]) {
+                if (!el) continue;
                 el.classList.remove('vinyl-line-in');
                 void el.offsetWidth;
                 el.classList.add('vinyl-line-in');
@@ -550,6 +655,30 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
         ? settingsAccess.onChange(() => refreshAll(false))
         : () => {};
 
+    // Spectrum: read the analyser inside the app's frame loop (values change
+    // every frame and are never announced). Bars fall back down smoothly.
+    const spectrumLevels = new Float32Array(SPECTRUM_BARS);
+    const offFrame = ctx.onFrame(() => {
+        if (!settings().showSpectrum || spectrum.style.display === 'none') return;
+        const data = ctx.audio?.getSpectrum?.();
+        const n = data ? data.length : 0;
+        for (let i = 0; i < SPECTRUM_BARS; i += 1) {
+            let value = 0;
+            if (n > 0) {
+                // Log-ish bucketing so bass does not eat the whole width.
+                const lo = Math.floor((i / SPECTRUM_BARS) ** 1.6 * n);
+                const hi = Math.max(lo + 1, Math.floor(((i + 1) / SPECTRUM_BARS) ** 1.6 * n));
+                let sum = 0;
+                for (let j = lo; j < hi && j < n; j += 1) sum += data[j];
+                value = sum / (hi - lo) / 255;
+            }
+            const prev = spectrumLevels[i] * 0.86;
+            const level = Math.max(value, prev);
+            spectrumLevels[i] = level;
+            spectrumBars[i].style.transform = `scaleY(${(0.04 + level * 0.96).toFixed(3)})`;
+        }
+    });
+
     // Line changes come with the lyric clock; only redraw the text when the
     // active line actually moved.
     const offTime = ctx.onLyricTime(() => {
@@ -566,6 +695,7 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
         offChange();
         offTime();
         offSettings();
+        offFrame();
     };
 }
 
