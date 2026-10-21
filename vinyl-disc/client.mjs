@@ -77,6 +77,17 @@ export default function activate(folium) {
         },
     ];
 
+    // The settings live in a settings section, so they show up in the mod's
+    // own row in Settings → Mods (expanded). The visualizer reads the same
+    // values through the section handle; there is no second schema on the
+    // visualizer itself, so there is exactly one source of truth.
+    const section = folium.registries.settingsSections.register({
+        id: 'settings',
+        label: label('黑胶唱片', 'Vinyl'),
+        description: label('选中「黑胶唱片」动画模式时生效', 'Applies while the Vinyl lyric mode is selected'),
+        settings: SETTINGS,
+    });
+
     folium.registries.visualizers.register({
         id: 'disc',
         label: label('黑胶唱片', 'Vinyl'),
@@ -84,8 +95,7 @@ export default function activate(folium) {
         // We draw the lyric text ourselves, so the host must not draw its own
         // subtitle layer on top; the background stays the host's.
         hostLayers: { background: true, subtitles: false },
-        settings: SETTINGS,
-        mount: (container, ctx) => mountVinyl(folium, container, ctx),
+        mount: (container, ctx) => mountVinyl(folium, container, ctx, section.settings),
     });
 }
 
@@ -95,7 +105,7 @@ export default function activate(folium) {
 // the user's lyric size apply without a canvas text layout.
 // ---------------------------------------------------------------------------
 
-function mountVinyl(folium, container, ctx) {
+function mountVinyl(folium, container, ctx, settingsAccess) {
     container.style.cssText = 'position:absolute;inset:0;overflow:hidden;';
 
     const style = document.createElement('style');
@@ -288,7 +298,9 @@ function mountVinyl(folium, container, ctx) {
     let coverUrlForColor = null;
 
     const settings = () => {
-        const v = ctx.getSettings() || {};
+        // Values come from the mod's settings section (defaults merged by the
+        // host); ctx.getSettings() is only a fallback for odd hosts.
+        const v = settingsAccess ? settingsAccess.get() : (ctx.getSettings() || {});
         return {
             discSide: v.discSide === 'left' ? 'left' : 'right',
             discSize: num(v.discSize, 0.62),
@@ -364,7 +376,10 @@ function mountVinyl(folium, container, ctx) {
         const changed = key !== lastTextKey;
         lastTextKey = key;
 
-        lineEl.textContent = text || '♪';
+        // An empty line (instrumental gap, or no lyric at the very start) must
+        // stay blank — a placeholder glyph here reads as a stray "♪" in the
+        // lyrics, which looked like a bug.
+        lineEl.textContent = text;
         translationEl.textContent = translation;
         translationEl.style.display = translation ? '' : 'none';
         nextEl.textContent = nextText;
@@ -501,6 +516,12 @@ function mountVinyl(folium, container, ctx) {
         refreshAll(false);
     });
 
+    // Setting changes do not come through ctx.onChange (they are the section's
+    // values, not the visualizer's own), so listen on the section directly.
+    const offSettings = settingsAccess?.onChange
+        ? settingsAccess.onChange(() => refreshAll(false))
+        : () => {};
+
     // Line changes come with the lyric clock; only redraw the text when the
     // active line actually moved.
     const offTime = ctx.onLyricTime(() => {
@@ -516,6 +537,7 @@ function mountVinyl(folium, container, ctx) {
         offResize();
         offChange();
         offTime();
+        offSettings();
     };
 }
 

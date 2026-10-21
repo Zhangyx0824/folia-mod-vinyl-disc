@@ -20,7 +20,7 @@ https://github.com/Zhangyx0824/folia-mod-vinyl-disc
 ## 版本 / Version (tag or commit)
 
 ```
-v1.3.2
+v1.3.3
 ```
 
 ## 模组目录 / Mod directory
@@ -74,10 +74,15 @@ MIT
 2. 维护者审查代码与权限声明。
 3. 维护者评论 `/sign <commit>` → CI 签名、复制进 folium-compound、发布到模组市场，issue 自动关闭。
 
+## 本次提交包含的修复（1.3.3）
+
+- 设置项注册到模组面板（settingsSections），在「设置 → 模组」展开即可调整。
+- 修复空歌词行显示「♪」占位符的问题。
+
 ## 本地预检结果（2026-10-21）
 
 - `validateManifest(mod.json)` → `{ ok: true }`（用 folium-compound 的 `tools/vendor/folia-manifest.cjs`）
 - 模组目录：`vinyl-disc/`，4 个文件（mod.json / client.mjs / preview.jpg / LICENSE），约 164 KB
-- 提交：`f1223d0`，tag `v1.3.2`；无 `folium.sig.json`、无符号链接
+- 提交：`f1223d0`，tag `v1.3.3`；无 `folium.sig.json`、无符号链接
 - 预览图：1280×720 JPEG，126 KB（市场要求 ≤1 MB，推荐 16:9）
 - `permissions: []`、`folia: >=0.7.21 <0.8.0`（本机 Folia 0.7.21 在范围内）
