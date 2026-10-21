@@ -259,8 +259,7 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
     // long straight tube (70% of the arm) that flows into a rounded 30% bend,
     // and a small capsule head shell. One SVG covering the scene; the whole
     // arm rotates around the pivot and a CSS transition does the lift on
-    // pause. ViewBox 0..100. The arm is ink-on-paper monochrome: pale on a
-    // dark page, near-black on a light page, so it reads on both.
+    // pause. ViewBox 0..100.
     const arm = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     arm.setAttribute('viewBox', '0 0 100 100');
     arm.setAttribute('aria-hidden', 'true');
@@ -272,33 +271,28 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
     arm.style.filter = 'drop-shadow(0 3px 4px rgba(0,0,0,0.45))';
     scene.appendChild(arm);
 
-    let armOnLight = null;
-    const armMarkup = (onLight) => {
-        const c = onLight
-            ? { rod0: '#55555c', rod1: '#3a3a40', head: '#46464c', stylus: '#e9e9ee', pivot: '#3a3a40', dot: '#ececef', ring: 'rgba(255,255,255,0.30)' }
-            : { rod0: '#f4f4f6', rod1: '#dcdce0', head: '#f2f2f4', stylus: '#3a3a3e', pivot: '#f6f6f8', dot: '#2a2a2e', ring: 'rgba(0,0,0,0.18)' };
-        return [
-            '<defs>',
-            '<linearGradient id="vinylArmRod" x1="90" y1="-8" x2="64.6" y2="29" gradientUnits="userSpaceOnUse">',
-            `<stop offset="0" stop-color="${c.rod0}"/><stop offset="1" stop-color="${c.rod1}"/></linearGradient>`,
-            '</defs>',
-            // One continuous rod: pivot -> long straight tube -> rounded elbow ->
-            // short tail -> head. The elbow is filleted (quadratic) so the bend
-            // reads as a smooth curve rather than a kink.
-            '<path d="M 90 -8 L 77.95 18.42 Q 76.5 21.6 73.53 23.45 L 64.6 29"',
-            ' fill="none" stroke="url(#vinylArmRod)" stroke-width="1.9"',
-            ' stroke-linecap="round" stroke-linejoin="round"/>',
-            // head shell: a small capsule continuing the lower rod
-            '<g transform="rotate(148 64.6 29)">',
-            `<rect x="59.1" y="26.5" width="11" height="5" rx="2.5" fill="${c.head}"/>`,
-            `<circle cx="69" cy="29" r="0.95" fill="${c.stylus}"/>`,
-            '</g>',
-            // pivot: a small disc with a contrasting centre dot
-            `<circle cx="90" cy="-8" r="4.3" fill="${c.pivot}"/>`,
-            `<circle cx="90" cy="-8" r="1.8" fill="${c.dot}"/>`,
-            `<circle cx="90" cy="-8" r="4.3" fill="none" stroke="${c.ring}" stroke-width="0.5"/>`,
-        ].join('');
-    };
+    const armMarkup = () => [
+        '<defs>',
+        '<linearGradient id="vinylArmRod" x1="90" y1="-8" x2="64.6" y2="29" gradientUnits="userSpaceOnUse">',
+        '<stop offset="0" stop-color="#f4f4f6"/><stop offset="1" stop-color="#dcdce0"/></linearGradient>',
+        '</defs>',
+        // One continuous rod: pivot -> long straight tube -> rounded elbow ->
+        // short tail -> head. The elbow is filleted (quadratic) so the bend
+        // reads as a smooth curve rather than a kink.
+        '<path d="M 90 -8 L 77.95 18.42 Q 76.5 21.6 73.53 23.45 L 64.6 29"',
+        ' fill="none" stroke="url(#vinylArmRod)" stroke-width="1.9"',
+        ' stroke-linecap="round" stroke-linejoin="round"/>',
+        // head shell: a small capsule continuing the lower rod
+        '<g transform="rotate(148 64.6 29)">',
+        '<rect x="59.1" y="26.5" width="11" height="5" rx="2.5" fill="#f2f2f4"/>',
+        '<circle cx="69" cy="29" r="0.95" fill="#3a3a3e"/>',
+        '</g>',
+        // pivot: white disc with a dark centre dot
+        '<circle cx="90" cy="-8" r="4.3" fill="#f6f6f8"/>',
+        '<circle cx="90" cy="-8" r="1.8" fill="#2a2a2e"/>',
+        '<circle cx="90" cy="-8" r="4.3" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="0.5"/>',
+    ].join('');
+    arm.innerHTML = armMarkup();
 
     // ---- state -------------------------------------------------------------
     let disposed = false;
@@ -381,22 +375,27 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
         const index = ctx.staticMode && ctx.staticLineIndex !== null
             ? ctx.staticLineIndex
             : ctx.getLineIndex();
-        const line = index >= 0 ? ctx.lines[index] : null;
-        const nextLine = s.showNext && index + 1 < ctx.lines.length ? ctx.lines[index + 1] : null;
+        // When the active line is blank (an instrumental gap), keep the
+        // previous sung line on screen until the next real line arrives — the
+        // default behaviour on every player. Before the first line, blank.
+        let shown = index;
+        while (shown >= 0 && !(ctx.lines[shown]?.fullText?.trim())) shown -= 1;
+        const line = shown >= 0 ? ctx.lines[shown] : null;
+        let nextAt = index + 1;
+        while (nextAt < ctx.lines.length && !(ctx.lines[nextAt]?.fullText?.trim())) nextAt += 1;
+        const nextLine = s.showNext && nextAt < ctx.lines.length ? ctx.lines[nextAt] : null;
 
         const text = line?.fullText?.trim() || '';
         const translation = line?.translation?.trim() || '';
         const nextText = nextLine?.fullText?.trim() || '';
 
         // Re-animate only when the line really changed (the clock ticks far
-        // more often than lines change).
-        const key = `${index}|${text}|${translation}|${nextText}`;
+        // more often than lines change). Keyed on the *shown* line so passing
+        // through blank lines does not re-run the animation.
+        const key = `${shown}|${text}|${translation}|${nextText}`;
         const changed = key !== lastTextKey;
         lastTextKey = key;
 
-        // An empty line (instrumental gap, or no lyric at the very start) must
-        // stay blank — a placeholder glyph here reads as a stray "♪" in the
-        // lyrics, which looked like a bug.
         lineEl.textContent = text;
         translationEl.textContent = translation;
         translationEl.style.display = translation ? '' : 'none';
@@ -444,15 +443,6 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
         const labelPx = diameter * s.labelRatio;
         fallbackTitle.style.fontSize = `${Math.max(8, Math.round(labelPx * 0.13))}px`;
         fallbackArtist.style.fontSize = `${Math.max(7, Math.round(labelPx * 0.085))}px`;
-
-        // Monochrome legibility: the arm leaves the disc and crosses the page
-        // background, so its ink flips with the theme's background lightness.
-        const theme = ctx.getTheme();
-        const onLight = isLightBackground(theme);
-        if (onLight !== armOnLight) {
-            armOnLight = onLight;
-            arm.innerHTML = armMarkup(onLight);
-        }
 
         // Motion.
         disc.style.setProperty('--vinyl-spin', `${s.spinSeconds}s`);
@@ -594,7 +584,6 @@ function buildSettingsPanel(container, panelCtx, schema, bi) {
 
     let draft = { ...panelCtx.settings.get() };
     let savedTimer = null;
-    const disposers = [];
     const text = (zh, en) => loc(bi(zh, en));
 
     const render = () => {
@@ -706,10 +695,11 @@ function buildSettingsPanel(container, panelCtx, schema, bi) {
     };
 
     render();
-    disposers.push(panelCtx.onChange(render));
+    // Deliberately no re-render on theme change here: rebuilding the form
+    // while the mods list scrolls reads as flicker in the panel. Colors are
+    // picked up the next time the panel is opened.
     return () => {
         clearTimeout(savedTimer);
-        for (const off of disposers) off();
     };
 }
 
