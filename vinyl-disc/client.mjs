@@ -544,7 +544,9 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
         scene.style.height = `${diameter}px`;
 
         const gap = Math.round(width * 0.03);
-        const pad = Math.round(width * 0.05);
+        // Page margins: 1.5x the old 5% so lyrics and disc breathe away from
+        // the screen edges.
+        const pad = Math.round(width * 0.075);
         discBox.style.marginLeft = s.discSide === 'right' ? `${gap}px` : '0';
         discBox.style.marginRight = s.discSide === 'left' ? `${gap}px` : '0';
         stage.style.paddingLeft = `${pad}px`;
