@@ -268,9 +268,9 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
     // ---- tonearm -----------------------------------------------------------
     // A slim arm like the mobile reference: a small pivot outside the disc,
     // a long straight tube (70%), then a rounded 30% bend whose head shell
-    // rests on the *vinyl grooves* just outside the label. The whole arm is
-    // liquid-glass: translucent fills over a backdrop blur, and its ink is
-    // tinted with the current artwork's dominant colour.
+    // rests on the *vinyl grooves* just outside the label. The glass look is
+    // simulated purely with translucency, highlights and shading (no
+    // backdrop-filter), and the ink is tinted with the artwork colour.
     const arm = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     arm.setAttribute('viewBox', '0 0 100 100');
     arm.setAttribute('aria-hidden', 'true');
@@ -278,7 +278,6 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
         'position:absolute;inset:0;width:100%;height:100%;overflow:visible;',
         'transform-origin:90% -8%;transform:rotate(-50deg);',
         'transition:transform 0.9s cubic-bezier(0.3, 1.2, 0.45, 1);',
-        'backdrop-filter:blur(5px) saturate(1.15);',
     ].join('');
     arm.style.filter = 'drop-shadow(0 3px 5px rgba(0,0,0,0.4))';
     scene.appendChild(arm);
@@ -298,6 +297,7 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
         '<g transform="rotate(142 77 21.2)">',
         '<rect x="71.5" y="18.7" width="11" height="5" rx="2.5" style="fill:var(--arm-head, #f2f2f4);fill-opacity:0.88"/>',
         '<rect x="71.5" y="18.7" width="11" height="2.2" rx="1.1" fill="#ffffff" fill-opacity="0.35"/>',
+        '<rect x="71.5" y="21.6" width="11" height="2.1" rx="1.05" fill="#000000" fill-opacity="0.07"/>',
         '<circle cx="81.4" cy="21.2" r="0.95" style="fill:var(--arm-stylus, #3a3a3e)"/>',
         '</g>',
         // pivot: a glass disc with a dark centre dot
