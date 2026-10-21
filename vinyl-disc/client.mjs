@@ -375,8 +375,9 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
             + 'opacity:0.78;line-height:1.4;font-weight:400;';
     };
 
-    // Lines that merely carry song metadata ("标题", "歌手", "标题 - 歌手")
-    // are not lyric lines; skip them wherever they appear.
+    // Lines that are really song metadata ("标题 - 歌手" combos, as injected
+    // by some lyric sources) are not lyric lines. Bare title or artist lines
+    // are legitimate lyrics and must stay visible.
     const isMetaLine = (() => {
         let cachedSong = null;
         let cachedSet = new Set();
@@ -384,15 +385,12 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
             if (song !== cachedSong) {
                 cachedSong = song;
                 cachedSet = new Set();
-                if (song) {
-                    for (const part of [song.title, song.artist]) {
-                        if (part) cachedSet.add(String(part).trim());
-                    }
-                    if (song.title && song.artist) {
-                        for (const sep of [' - ', '－', ' -', '- ', '-']) {
-                            cachedSet.add(`${song.title}${sep}${song.artist}`.trim());
-                            cachedSet.add(`${song.artist}${sep}${song.title}`.trim());
-                        }
+                if (song?.title && song.artist) {
+                    const title = String(song.title).trim();
+                    const artist = String(song.artist).trim();
+                    for (const sep of [' - ', '－', ' – ', ' — ', ' -', '- ', '-', '·']) {
+                        cachedSet.add(`${title}${sep}${artist}`.trim());
+                        cachedSet.add(`${artist}${sep}${title}`.trim());
                     }
                 }
             }
@@ -645,6 +643,10 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
 
     // ---- subscriptions -----------------------------------------------------
     const offResize = ctx.onResize((size) => {
+        // Degenerate sizes (the host collapses the stage while the settings
+        // modal opens) must not shrink the scene to a dot; keep the last
+        // layout until a real size arrives.
+        if (size.width < 100 || size.height < 100) return;
         width = Math.max(1, size.width);
         height = Math.max(1, size.height);
         refreshAll(false);
