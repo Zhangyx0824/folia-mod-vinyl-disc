@@ -1,10 +1,83 @@
-# folium-compound 模组提交 issue 内容（复制到表单对应字段）
+# folium-compound 模组提交 · 粘贴用文案
 
-- **模组 id**: `vinyl-disc`
-- **源码仓库**: https://github.com/Zhangyx0824/folia-mod-vinyl-disc
-- **版本**: `v1.3.2`（tag，对应 commit 4b2c291）
-- **模组目录**: `vinyl-disc`（仓库子目录）
-- **模组说明**: 一个歌词动画模式「黑胶唱片」：选中后播放界面出现黑胶唱片——当前歌曲封面作碟心，播放时唱片旋转、唱臂落下，暂停时唱臂抬起、唱片停转，歌词在唱片一侧排布（曲名/歌手、当前句、翻译、下一句）。通过 `folium.registries.visualizers` 注册，仅选中该模式时渲染，不影响其他歌词模式。不联网、不上传数据。
-- **权限说明**: 无任何权限（`permissions: []`）。未使用 `net.fetch`、`stageLayers`、`playback.*`、`platform.*`、`embedOrigins` 或任何实验接口；封面 URL、歌词、主题等均来自宿主提供的 `FoliumStageContext`。
-- **许可证**: MIT（模组目录内含 LICENSE）
-- **预览图**: `vinyl-disc/preview.jpg`（1280×720，126 KB）
+表单地址：https://github.com/chthollyphile/folium-compound/issues/new?template=mod-submission.yml
+标题：`[模组提交] 黑胶唱片 vinyl-disc`
+
+---
+
+## 模组 id / Mod id
+
+```
+vinyl-disc
+```
+
+## 源码仓库 / Source repository
+
+```
+https://github.com/Zhangyx0824/folia-mod-vinyl-disc
+```
+
+## 版本 / Version (tag or commit)
+
+```
+v1.3.2
+```
+
+## 模组目录 / Mod directory
+
+```
+vinyl-disc
+```
+
+## 发布渠道 / Channel
+
+选「正式发布 / Release」
+
+## 模组说明 / Description
+
+```
+一个歌词动画模式「黑胶唱片」：在播放界面的动画模式选择器里选中它时，播放页出现一张黑胶唱片——当前歌曲封面作碟心（占直径 72%），压纹沟槽、固定高光、转轴孔；播放时唱片匀速旋转、唱臂落下，暂停时唱臂抬起、唱片停转；歌词（曲名 / 歌手、当前句、翻译、下一句）排在唱片一侧，颜色与字体跟随当前主题与用户的歌词字号设置。切歌时宿主自动重挂载，封面随之更换；无封面时碟心回退显示歌名 / 歌手。
+
+效果参考 QQ 音乐 / 网易云音乐的黑胶播放页。不选中该模式时完全不渲染，与内置及其他模组的歌词样式互不影响（1.1.0 修正过：早期版本用 stageLayers 常驻图层，会叠在所有模式之上）。
+
+可调项：唱片位置（左 / 右）、大小（30%–100% 播放区高度）、旋转周期（6–60 秒）、封面占比（50%–85%）、弥散投影（关闭 / 跟随封面主色 / 主题色）、唱臂与高光开关、歌词字号、是否显示下一句。
+
+实现：通过公开注册表 folium.registries.visualizers 注册一个动画模式（hostLayers: { background: true, subtitles: false }，歌词文本由模组自绘以避免与宿主字幕重复），全部数据来自 FoliumStageContext（lines / onLyricTime / getLineIndex / getCoverUrl / isPaused / getTheme / getDisplay / onResize / onChange）。旋转为 CSS 动画，唱臂为内联 SVG。弥散投影的主色在本地对封面做 24×24 降采样提取，不联网。
+```
+
+## 权限说明 / Permissions
+
+```
+无。mod.json 的 permissions 为空数组 []，未声明 embedOrigins，也未使用任何 experimental 接口。模组只使用动画模式注册表（visualizers）与宿主提供的上下文读取，不需要 stageLayers、playback.*、net.fetch、filesystem.data 或 platform.*；不联网、不上传用户数据、不碰宿主 DOM、不注入全局样式。唯一写入的是宿主代为保存的模式设置。
+```
+
+## 许可证 / License
+
+```
+MIT
+```
+
+## 运行截图 / Screenshot
+
+必须**把图片直接拖进这个输入框上传**（外部链接不算，CI 只认 github.com/user-attachments 的地址）。
+截图要求：Folia 播放页选中「黑胶唱片」模式、正常显示唱片与歌词；最好能带上 Folia 版本号（0.7.21）。
+
+## 确认 / Confirmations
+
+三项全部勾选。
+
+---
+
+## 提交后的流程
+
+1. CI 自动检查并回复「格式检查通过，请等待维护者审查」，并附将要签名的文件清单。
+2. 维护者审查代码与权限声明。
+3. 维护者评论 `/sign <commit>` → CI 签名、复制进 folium-compound、发布到模组市场，issue 自动关闭。
+
+## 本地预检结果（2026-10-21）
+
+- `validateManifest(mod.json)` → `{ ok: true }`（用 folium-compound 的 `tools/vendor/folia-manifest.cjs`）
+- 模组目录：`vinyl-disc/`，4 个文件（mod.json / client.mjs / preview.jpg / LICENSE），约 164 KB
+- 提交：`f1223d0`，tag `v1.3.2`；无 `folium.sig.json`、无符号链接
+- 预览图：1280×720 JPEG，126 KB（市场要求 ≤1 MB，推荐 16:9）
+- `permissions: []`、`folia: >=0.7.21 <0.8.0`（本机 Folia 0.7.21 在范围内）
