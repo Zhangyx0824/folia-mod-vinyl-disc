@@ -266,11 +266,11 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
     scene.appendChild(sheen);
 
     // ---- tonearm -----------------------------------------------------------
-    // A slim arm like the mobile reference: a small pivot outside the disc,
-    // a long straight tube (70%), then a rounded 30% bend whose head shell
-    // rests on the *vinyl grooves* just outside the label. The glass look is
-    // simulated purely with translucency, highlights and shading (no
-    // backdrop-filter), and the ink is tinted with the artwork colour.
+    // A slim light arm like the mobile reference: a small pivot outside the
+    // disc, a long straight tube (70%), then a rounded 30% bend whose head
+    // shell rests on the *vinyl grooves* just outside the label. Subtle
+    // translucency, highlights and shading give it a glass feel; the colour
+    // stays the classic pale white regardless of artwork.
     const arm = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     arm.setAttribute('viewBox', '0 0 100 100');
     arm.setAttribute('aria-hidden', 'true');
@@ -285,8 +285,8 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
     const armMarkup = () => [
         '<defs>',
         '<linearGradient id="vinylArmRod" x1="90" y1="-8" x2="77" y2="21.2" gradientUnits="userSpaceOnUse">',
-        '<stop offset="0" style="stop-color:var(--arm-rod0, #f4f4f6)"/>',
-        '<stop offset="1" style="stop-color:var(--arm-rod1, #dcdce0)"/></linearGradient>',
+        '<stop offset="0" stop-color="#f4f4f6"/>',
+        '<stop offset="1" stop-color="#dcdce0"/></linearGradient>',
         '</defs>',
         // One continuous rod: pivot -> long straight tube -> rounded elbow ->
         // short tail -> head on the grooves.
@@ -295,36 +295,17 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
         ' stroke-linecap="round" stroke-linejoin="round"/>',
         // head shell: a small glass capsule continuing the lower rod
         '<g transform="rotate(142 77 21.2)">',
-        '<rect x="71.5" y="18.7" width="11" height="5" rx="2.5" style="fill:var(--arm-head, #f2f2f4);fill-opacity:0.88"/>',
+        '<rect x="71.5" y="18.7" width="11" height="5" rx="2.5" fill="#f2f2f4" fill-opacity="0.88"/>',
         '<rect x="71.5" y="18.7" width="11" height="2.2" rx="1.1" fill="#ffffff" fill-opacity="0.35"/>',
         '<rect x="71.5" y="21.6" width="11" height="2.1" rx="1.05" fill="#000000" fill-opacity="0.07"/>',
-        '<circle cx="81.4" cy="21.2" r="0.95" style="fill:var(--arm-stylus, #3a3a3e)"/>',
+        '<circle cx="81.4" cy="21.2" r="0.95" fill="#3a3a3e"/>',
         '</g>',
         // pivot: a glass disc with a dark centre dot
-        '<circle cx="90" cy="-8" r="4.3" style="fill:var(--arm-pivot, #f6f6f8);fill-opacity:0.9"/>',
+        '<circle cx="90" cy="-8" r="4.3" fill="#f6f6f8" fill-opacity="0.9"/>',
         '<circle cx="90" cy="-8" r="4.3" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="0.45"/>',
-        '<circle cx="90" cy="-8" r="1.8" style="fill:var(--arm-dot, #2a2a2e)"/>',
+        '<circle cx="90" cy="-8" r="1.8" fill="#2a2a2e"/>',
     ].join('');
     arm.innerHTML = armMarkup();
-
-    // Tint the arm with the artwork colour: pale mixes of it keep the glass
-    // look while clearly belonging to the current song.
-    const setArmColor = (color) => {
-        if (!color) {
-            for (const key of ['--arm-rod0', '--arm-rod1', '--arm-head', '--arm-stylus', '--arm-pivot', '--arm-dot']) {
-                arm.style.removeProperty(key);
-            }
-            return;
-        }
-        const mixW = (t) => mixHex(color, '#ffffff', t);
-        const mixK = (t) => mixHex(color, '#101010', t);
-        arm.style.setProperty('--arm-rod0', mixW(0.66));
-        arm.style.setProperty('--arm-rod1', mixW(0.42));
-        arm.style.setProperty('--arm-head', mixW(0.52));
-        arm.style.setProperty('--arm-stylus', mixK(0.55));
-        arm.style.setProperty('--arm-pivot', mixW(0.55));
-        arm.style.setProperty('--arm-dot', mixK(0.62));
-    };
 
     // ---- state -------------------------------------------------------------
     let disposed = false;
@@ -634,7 +615,6 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
                 void dominantColor(cover).then((color) => {
                     if (disposed || coverUrlForColor !== cover) return;
                     coverColor = color;
-                    setArmColor(color);
                     applyHalo(diameterPx);
                 });
             }
@@ -644,7 +624,6 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
             labelFallback.style.display = '';
             coverUrlForColor = null;
             coverColor = null;
-            setArmColor(null);
             const song = ctx.song;
             fallbackTitle.textContent = song?.title || '♪';
             fallbackArtist.textContent = song?.artist || '';
@@ -922,17 +901,6 @@ const hslToRgb = (h, s, l) => {
 };
 
 const toHex = (r, g, b) => `#${[r, g, b].map((v) => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0')).join('')}`;
-
-// Linear mix of two hex colours, t=0 → a, t=1 → b.
-const mixHex = (a, b, t) => {
-    const ca = hexToRgb(a) || { r: 244, g: 244, b: 246 };
-    const cb = hexToRgb(b) || { r: 255, g: 255, b: 255 };
-    return toHex(
-        Math.round(ca.r + (cb.r - ca.r) * t),
-        Math.round(ca.g + (cb.g - ca.g) * t),
-        Math.round(ca.b + (cb.b - ca.b) * t),
-    );
-};
 
 // One entry per cover URL, so switching back and forth costs nothing.
 const COLOR_CACHE = new Map();
