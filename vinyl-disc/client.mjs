@@ -48,9 +48,9 @@ export default function activate(folium) {
             description: label('碟心封面占唱片直径的比例', 'The cover label as a fraction of the disc diameter'),
         },
         {
-            key: 'showLabel', type: 'boolean', defaultValue: true,
-            label: label('碟心圆（模拟光盘）', 'Centre label'),
-            description: label('唱片中间那个圆形的封面碟心，关掉后是一张纯黑胶', 'The round cover label at the centre; off gives a plain record'),
+            key: 'showSpindle', type: 'boolean', defaultValue: true,
+            label: label('中心孔（黑色圆点）', 'Spindle hole'),
+            description: label('盖在封面正中的黑色转轴孔圆点，关掉后封面完整无孔', 'The small black spindle dot on the cover; off leaves the artwork intact'),
         },
         {
             key: 'showArm', type: 'boolean', defaultValue: true,
@@ -301,6 +301,8 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
     let height = 1;
     let lastLineIndex = null;
     let lastTextKey = '';
+    // The last non-empty line shown; held on screen through blank stretches.
+    let holdIndex = null;
     let diameterPx = 0;
     // Dominant colour of the current artwork, used by the diffuse halo. Null
     // until extracted (or when the artwork cannot be read), then the theme
@@ -317,7 +319,7 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
             discSize: num(v.discSize, 0.62),
             spinSeconds: num(v.spinSeconds, 20),
             labelRatio: num(v.labelRatio, 0.72),
-            showLabel: v.showLabel !== false,
+            showSpindle: v.showSpindle !== false,
             showArm: v.showArm !== false,
             sheen: v.sheen !== false,
             halo: v.halo === 'off' || v.halo === 'theme' ? v.halo : 'cover',
@@ -375,13 +377,19 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
         const index = ctx.staticMode && ctx.staticLineIndex !== null
             ? ctx.staticLineIndex
             : ctx.getLineIndex();
-        // When the active line is blank (an instrumental gap), keep the
-        // previous sung line on screen until the next real line arrives — the
-        // default behaviour on every player. Before the first line, blank.
+        // Blank stretch (instrumental gap, song intro, the moment between
+        // lines when the host reports -1): keep showing the last sung line
+        // until the next real line arrives — the default on every player.
+        // `holdIndex` remembers it across renders.
         let shown = index;
         while (shown >= 0 && !(ctx.lines[shown]?.fullText?.trim())) shown -= 1;
+        if (shown >= 0) {
+            holdIndex = shown;
+        } else if (index < 0 && holdIndex !== null && holdIndex < ctx.lines.length) {
+            shown = holdIndex;
+        }
         const line = shown >= 0 ? ctx.lines[shown] : null;
-        let nextAt = index + 1;
+        let nextAt = index < 0 ? 0 : index + 1;
         while (nextAt < ctx.lines.length && !(ctx.lines[nextAt]?.fullText?.trim())) nextAt += 1;
         const nextLine = s.showNext && nextAt < ctx.lines.length ? ctx.lines[nextAt] : null;
 
@@ -437,7 +445,9 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
 
         // Disc label proportions.
         const pct = s.labelRatio * 100;
-        discLabel.style.display = s.showLabel ? '' : 'none';
+        // The spindle is the small black dot sitting on the cover; off leaves
+        // the artwork intact.
+        spindle.style.display = s.showSpindle ? '' : 'none';
         discLabel.style.left = discLabel.style.top = `${((100 - pct) / 2).toFixed(2)}%`;
         discLabel.style.width = discLabel.style.height = `${pct.toFixed(2)}%`;
         const labelPx = diameter * s.labelRatio;

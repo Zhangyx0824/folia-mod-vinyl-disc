@@ -20,7 +20,7 @@ https://github.com/Zhangyx0824/folia-mod-vinyl-disc
 ## 版本 / Version (tag or commit)
 
 ```
-v1.4.1
+v1.4.2
 ```
 
 ## 模组目录 / Mod directory
@@ -74,18 +74,19 @@ MIT
 2. 维护者审查代码与权限声明。
 3. 维护者评论 `/sign <commit>` → CI 签名、复制进 folium-compound、发布到模组市场，issue 自动关闭。
 
-## 本次提交包含的修复与新增（1.4.1）
+## 本次提交包含的修复与新增（1.4.2）
 
 - 设置项注册到模组面板（settingsSections），自绘面板带「保存 / 恢复默认」按钮，保存后才应用，避免实时重排闪屏。
 - 修复空歌词行显示「♪」占位符的问题。
 - 新增「碟心圆（模拟光盘）」开关。
-- 间奏等空歌词行保留上一句歌词，直到下一句出现（与常见播放器一致）。
+- 歌词间隙（含宿主报 -1 的空档）始终保留上一句歌词，直到下一句出现，不再露出空白只剩歌名 / 歌手（与常见播放器一致）。
+- 「中心孔」开关控制盖在封面上的黑色转轴孔圆点。
 - 设置面板为黑白墨色样式（浅色 / 深色主题都清晰），且不在主题变化时重建，避免模组面板闪屏。
 
 ## 本地预检结果（2026-10-21）
 
 - `validateManifest(mod.json)` → `{ ok: true }`（用 folium-compound 的 `tools/vendor/folia-manifest.cjs`）
 - 模组目录：`vinyl-disc/`，4 个文件（mod.json / client.mjs / preview.jpg / LICENSE），约 164 KB
-- 提交：`f1223d0`，tag `v1.4.1`；无 `folium.sig.json`、无符号链接
+- 提交：`f1223d0`，tag `v1.4.2`；无 `folium.sig.json`、无符号链接
 - 预览图：1280×720 JPEG，126 KB（市场要求 ≤1 MB，推荐 16:9）
 - `permissions: []`、`folia: >=0.7.21 <0.8.0`（本机 Folia 0.7.21 在范围内）
