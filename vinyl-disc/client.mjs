@@ -48,6 +48,11 @@ export default function activate(folium) {
             description: label('碟心封面占唱片直径的比例', 'The cover label as a fraction of the disc diameter'),
         },
         {
+            key: 'showLabel', type: 'boolean', defaultValue: true,
+            label: label('碟心圆（模拟光盘）', 'Centre label'),
+            description: label('唱片中间那个圆形的封面碟心，关掉后是一张纯黑胶', 'The round cover label at the centre; off gives a plain record'),
+        },
+        {
             key: 'showArm', type: 'boolean', defaultValue: true,
             label: label('唱臂', 'Tonearm'),
             description: label('播放时落在唱片上，暂停时抬起', 'Rests on the disc while playing, lifts on pause'),
@@ -84,8 +89,12 @@ export default function activate(folium) {
     const section = folium.registries.settingsSections.register({
         id: 'settings',
         label: label('黑胶唱片', 'Vinyl'),
-        description: label('选中「黑胶唱片」动画模式时生效', 'Applies while the Vinyl lyric mode is selected'),
+        description: label('选中「黑胶唱片」动画模式时生效；改动点「保存」后应用', 'Applies while the Vinyl lyric mode is selected; press Save to apply changes'),
         settings: SETTINGS,
+        // We draw the form ourselves: edits stay in a draft until 保存 is
+        // pressed, so the player page does not re-layout (and flicker) on
+        // every keystroke in the mod panel.
+        settingsPanel: (container, panelCtx) => buildSettingsPanel(container, panelCtx, SETTINGS, label),
     });
 
     folium.registries.visualizers.register({
@@ -250,7 +259,8 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
     // long straight tube (70% of the arm) that flows into a rounded 30% bend,
     // and a small capsule head shell. One SVG covering the scene; the whole
     // arm rotates around the pivot and a CSS transition does the lift on
-    // pause. ViewBox 0..100.
+    // pause. ViewBox 0..100. The arm is ink-on-paper monochrome: pale on a
+    // dark page, near-black on a light page, so it reads on both.
     const arm = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     arm.setAttribute('viewBox', '0 0 100 100');
     arm.setAttribute('aria-hidden', 'true');
@@ -259,29 +269,36 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
         'transform-origin:90% -8%;transform:rotate(-50deg);',
         'transition:transform 0.9s cubic-bezier(0.3, 1.2, 0.45, 1);',
     ].join('');
-    arm.innerHTML = [
-        '<defs>',
-        '<linearGradient id="vinylArmRod" x1="90" y1="-8" x2="64.6" y2="29" gradientUnits="userSpaceOnUse">',
-        '<stop offset="0" stop-color="#f4f4f6"/><stop offset="1" stop-color="#dcdce0"/></linearGradient>',
-        '</defs>',
-        // One continuous rod: pivot -> long straight tube -> rounded elbow ->
-        // short tail -> head. The elbow is filleted (quadratic) so the bend
-        // reads as a smooth curve rather than a kink.
-        '<path d="M 90 -8 L 77.95 18.42 Q 76.5 21.6 73.53 23.45 L 64.6 29"',
-        ' fill="none" stroke="url(#vinylArmRod)" stroke-width="1.9"',
-        ' stroke-linecap="round" stroke-linejoin="round"/>',
-        // head shell: a small capsule continuing the lower rod
-        '<g transform="rotate(148 64.6 29)">',
-        '<rect x="59.1" y="26.5" width="11" height="5" rx="2.5" fill="#f2f2f4"/>',
-        '<circle cx="69" cy="29" r="0.95" fill="#3a3a3e"/>',
-        '</g>',
-        // pivot: white disc with a dark centre dot
-        '<circle cx="90" cy="-8" r="4.3" fill="#f6f6f8"/>',
-        '<circle cx="90" cy="-8" r="1.8" fill="#2a2a2e"/>',
-        '<circle cx="90" cy="-8" r="4.3" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="0.5"/>',
-    ].join('');
     arm.style.filter = 'drop-shadow(0 3px 4px rgba(0,0,0,0.45))';
     scene.appendChild(arm);
+
+    let armOnLight = null;
+    const armMarkup = (onLight) => {
+        const c = onLight
+            ? { rod0: '#55555c', rod1: '#3a3a40', head: '#46464c', stylus: '#e9e9ee', pivot: '#3a3a40', dot: '#ececef', ring: 'rgba(255,255,255,0.30)' }
+            : { rod0: '#f4f4f6', rod1: '#dcdce0', head: '#f2f2f4', stylus: '#3a3a3e', pivot: '#f6f6f8', dot: '#2a2a2e', ring: 'rgba(0,0,0,0.18)' };
+        return [
+            '<defs>',
+            '<linearGradient id="vinylArmRod" x1="90" y1="-8" x2="64.6" y2="29" gradientUnits="userSpaceOnUse">',
+            `<stop offset="0" stop-color="${c.rod0}"/><stop offset="1" stop-color="${c.rod1}"/></linearGradient>`,
+            '</defs>',
+            // One continuous rod: pivot -> long straight tube -> rounded elbow ->
+            // short tail -> head. The elbow is filleted (quadratic) so the bend
+            // reads as a smooth curve rather than a kink.
+            '<path d="M 90 -8 L 77.95 18.42 Q 76.5 21.6 73.53 23.45 L 64.6 29"',
+            ' fill="none" stroke="url(#vinylArmRod)" stroke-width="1.9"',
+            ' stroke-linecap="round" stroke-linejoin="round"/>',
+            // head shell: a small capsule continuing the lower rod
+            '<g transform="rotate(148 64.6 29)">',
+            `<rect x="59.1" y="26.5" width="11" height="5" rx="2.5" fill="${c.head}"/>`,
+            `<circle cx="69" cy="29" r="0.95" fill="${c.stylus}"/>`,
+            '</g>',
+            // pivot: a small disc with a contrasting centre dot
+            `<circle cx="90" cy="-8" r="4.3" fill="${c.pivot}"/>`,
+            `<circle cx="90" cy="-8" r="1.8" fill="${c.dot}"/>`,
+            `<circle cx="90" cy="-8" r="4.3" fill="none" stroke="${c.ring}" stroke-width="0.5"/>`,
+        ].join('');
+    };
 
     // ---- state -------------------------------------------------------------
     let disposed = false;
@@ -306,6 +323,7 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
             discSize: num(v.discSize, 0.62),
             spinSeconds: num(v.spinSeconds, 20),
             labelRatio: num(v.labelRatio, 0.72),
+            showLabel: v.showLabel !== false,
             showArm: v.showArm !== false,
             sheen: v.sheen !== false,
             halo: v.halo === 'off' || v.halo === 'theme' ? v.halo : 'cover',
@@ -420,11 +438,21 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
 
         // Disc label proportions.
         const pct = s.labelRatio * 100;
+        discLabel.style.display = s.showLabel ? '' : 'none';
         discLabel.style.left = discLabel.style.top = `${((100 - pct) / 2).toFixed(2)}%`;
         discLabel.style.width = discLabel.style.height = `${pct.toFixed(2)}%`;
         const labelPx = diameter * s.labelRatio;
         fallbackTitle.style.fontSize = `${Math.max(8, Math.round(labelPx * 0.13))}px`;
         fallbackArtist.style.fontSize = `${Math.max(7, Math.round(labelPx * 0.085))}px`;
+
+        // Monochrome legibility: the arm leaves the disc and crosses the page
+        // background, so its ink flips with the theme's background lightness.
+        const theme = ctx.getTheme();
+        const onLight = isLightBackground(theme);
+        if (onLight !== armOnLight) {
+            armOnLight = onLight;
+            arm.innerHTML = armMarkup(onLight);
+        }
 
         // Motion.
         disc.style.setProperty('--vinyl-spin', `${s.spinSeconds}s`);
@@ -543,6 +571,148 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
 
 const num = (value, fallback) => (Number.isFinite(Number(value)) ? Number(value) : fallback);
 
+// ---------------------------------------------------------------------------
+// Settings panel. Deliberately monochrome — the theme's own ink on the page —
+// so it stays legible on light and dark themes alike. Edits are held in a
+// local draft and only written through on 保存 (or restored with 恢复默认),
+// because applying live would restart the disc animations on every change and
+// read as flicker on the player page behind the panel.
+// ---------------------------------------------------------------------------
+
+function buildSettingsPanel(container, panelCtx, schema, bi) {
+    const el = (tag, cls) => {
+        const node = document.createElement(tag);
+        if (cls) node.className = cls;
+        return node;
+    };
+    const loc = (value) => {
+        if (value == null) return '';
+        if (typeof value === 'string') return value;
+        const zh = panelCtx.locale?.startsWith('zh');
+        return (zh ? value['zh-CN'] : value.en) ?? value['zh-CN'] ?? value.en ?? '';
+    };
+
+    let draft = { ...panelCtx.settings.get() };
+    let savedTimer = null;
+    const disposers = [];
+    const text = (zh, en) => loc(bi(zh, en));
+
+    const render = () => {
+        container.textContent = '';
+        const theme = panelCtx.getTheme();
+        const light = isLightBackground(theme);
+        const fg = theme.primaryColor || (light ? '#1a1a1a' : '#f2f2f2');
+        const dim = theme.secondaryColor || (light ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.55)');
+        const border = light ? 'rgba(0,0,0,0.20)' : 'rgba(255,255,255,0.24)';
+        const field = light ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)';
+
+        const style = el('style');
+        style.textContent = [
+            '.vinyl-set-row{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:7px 0;border-bottom:1px solid ' + border + ';}',
+            '.vinyl-set-row:last-of-type{border-bottom:none;}',
+            '.vinyl-set-name{font-size:12.5px;font-weight:600;color:' + fg + ';}',
+            '.vinyl-set-desc{font-size:11px;color:' + dim + ';margin-top:2px;max-width:340px;}',
+            '.vinyl-set-control{flex:0 0 auto;display:flex;align-items:center;}',
+            '.vinyl-set-control input[type=number]{width:96px;box-sizing:border-box;padding:4px 7px;border-radius:7px;border:1px solid ' + border + ';background:' + field + ';color:' + fg + ';font:inherit;font-size:12px;outline:none;}',
+            '.vinyl-set-control select{box-sizing:border-box;padding:4px 7px;border-radius:7px;border:1px solid ' + border + ';background:' + field + ';color:' + fg + ';font:inherit;font-size:12px;outline:none;}',
+            '.vinyl-set-control input[type=checkbox]{width:17px;height:17px;accent-color:' + fg + ';}',
+            '.vinyl-set-actions{display:flex;align-items:center;gap:8px;margin-top:11px;}',
+            '.vinyl-btn{font:inherit;font-size:12.5px;font-weight:600;padding:5px 14px;border-radius:8px;cursor:pointer;transition:opacity .15s ease;}',
+            '.vinyl-btn:active{opacity:0.72;}',
+            '.vinyl-btn-primary{border:1px solid ' + fg + ';background:' + fg + ';color:' + (light ? '#ffffff' : '#101010') + ';}',
+            '.vinyl-btn-ghost{border:1px solid ' + border + ';background:transparent;color:' + fg + ';}',
+            '.vinyl-set-status{font-size:11.5px;color:' + dim + ';}',
+        ].join('\n');
+        container.appendChild(style);
+
+        for (const def of schema) {
+            const row = el('div', 'vinyl-set-row');
+            const left = el('div');
+            const name = el('div', 'vinyl-set-name');
+            name.textContent = loc(def.label);
+            left.appendChild(name);
+            const desc = loc(def.description);
+            if (desc) {
+                const descEl = el('div', 'vinyl-set-desc');
+                descEl.textContent = desc;
+                left.appendChild(descEl);
+            }
+            const control = el('div', 'vinyl-set-control');
+
+            if (def.type === 'boolean') {
+                const input = el('input');
+                input.type = 'checkbox';
+                input.checked = draft[def.key] !== false;
+                input.addEventListener('change', () => { draft[def.key] = input.checked; });
+                control.appendChild(input);
+            } else if (def.type === 'number') {
+                const input = el('input');
+                input.type = 'number';
+                if (def.min !== undefined) input.min = String(def.min);
+                if (def.max !== undefined) input.max = String(def.max);
+                if (def.step !== undefined) input.step = String(def.step);
+                input.value = String(num(draft[def.key], def.defaultValue));
+                input.addEventListener('input', () => {
+                    const value = Number(input.value);
+                    if (Number.isFinite(value)) draft[def.key] = value;
+                });
+                control.appendChild(input);
+            } else if (def.type === 'select') {
+                const select = el('select');
+                for (const option of def.options || []) {
+                    const opt = el('option');
+                    opt.value = option.value;
+                    opt.textContent = loc(option.label);
+                    if (draft[def.key] === option.value) opt.selected = true;
+                    select.appendChild(opt);
+                }
+                select.addEventListener('change', () => { draft[def.key] = select.value; });
+                control.appendChild(select);
+            } else {
+                continue;
+            }
+
+            row.append(left, control);
+            container.appendChild(row);
+        }
+
+        const actions = el('div', 'vinyl-set-actions');
+        const save = el('button', 'vinyl-btn vinyl-btn-primary');
+        save.type = 'button';
+        save.textContent = text('保存', 'Save');
+        const reset = el('button', 'vinyl-btn vinyl-btn-ghost');
+        reset.type = 'button';
+        reset.textContent = text('恢复默认', 'Reset');
+        const status = el('span', 'vinyl-set-status');
+
+        save.addEventListener('click', () => {
+            panelCtx.settings.set(draft);
+            draft = { ...panelCtx.settings.get() };
+            status.textContent = text('已保存 ✓', 'Saved ✓');
+            clearTimeout(savedTimer);
+            savedTimer = setTimeout(() => { status.textContent = ''; }, 1800);
+        });
+        reset.addEventListener('click', () => {
+            panelCtx.settings.reset();
+            draft = { ...panelCtx.settings.get() };
+            render();
+            status.textContent = text('已恢复默认', 'Defaults restored');
+            clearTimeout(savedTimer);
+            savedTimer = setTimeout(() => { status.textContent = ''; }, 1800);
+        });
+
+        actions.append(save, reset, status);
+        container.appendChild(actions);
+    };
+
+    render();
+    disposers.push(panelCtx.onChange(render));
+    return () => {
+        clearTimeout(savedTimer);
+        for (const off of disposers) off();
+    };
+}
+
 const hexOr = (value, fallback) =>
     (typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback);
 
@@ -552,6 +722,14 @@ const hexToRgb = (hex) => {
     if (!m) return null;
     const value = parseInt(m[1], 16);
     return { r: (value >> 16) & 255, g: (value >> 8) & 255, b: value & 255 };
+};
+
+// Relative luminance of the theme's page background: the scene's ink (the
+// tonearm) flips with this so it stays visible on light and dark themes.
+const isLightBackground = (theme) => {
+    const rgb = hexToRgb(theme?.backgroundColor);
+    if (!rgb) return false;
+    return (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255 > 0.6;
 };
 
 const rgbToHsl = (r, g, b) => {
