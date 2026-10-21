@@ -157,16 +157,17 @@
 
     <!-- ===== tonearm: slim light arm, small pivot, capsule head ===== -->
     <g>
-      <path d="M 1120 110 L 1059.75 242.1 Q 1052.5 258 1037.65 267.25 L 993 295"
-            fill="none" stroke="#f2f2f4" stroke-width="9.5"
+      <path d="M 1120 110 L 1098.2 210.35 Q 1095 225 1083.15 234.15 L 1055 256"
+            fill="none" stroke="#f2f2f4" stroke-opacity="0.94" stroke-width="9.5"
             stroke-linecap="round" stroke-linejoin="round"/>
-      <g transform="rotate(148 993 295)">
-        <rect x="965.5" y="282.5" width="55" height="25" rx="12.5" fill="#f2f2f4"/>
-        <circle cx="1015" cy="295" r="4.8" fill="#3a3a3e"/>
+      <g transform="rotate(142 1055 256)">
+        <rect x="1027.5" y="243.5" width="55" height="25" rx="12.5" fill="#f2f2f4" fill-opacity="0.88"/>
+        <rect x="1027.5" y="243.5" width="55" height="11" rx="5.5" fill="#ffffff" fill-opacity="0.35"/>
+        <circle cx="1077" cy="256" r="4.8" fill="#3a3a3e"/>
       </g>
-      <circle cx="1120" cy="110" r="21.5" fill="#f6f6f8"/>
+      <circle cx="1120" cy="110" r="21.5" fill="#f6f6f8" fill-opacity="0.9"/>
+      <circle cx="1120" cy="110" r="21.5" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2.2"/>
       <circle cx="1120" cy="110" r="9" fill="#2a2a2e"/>
-      <circle cx="1120" cy="110" r="21.5" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="2.5"/>
     </g>
   </g>
 </svg>

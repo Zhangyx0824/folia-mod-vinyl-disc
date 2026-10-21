@@ -62,11 +62,6 @@ export default function activate(folium) {
             ],
         },
         {
-            key: 'showSpectrum', type: 'boolean', defaultValue: false,
-            label: label('频谱', 'Spectrum'),
-            description: label('歌词下方随音乐跳动的频谱条', 'A row of audio-reactive bars under the lyrics'),
-        },
-        {
             key: 'showArm', type: 'boolean', defaultValue: true,
             label: label('唱臂', 'Tonearm'),
             description: label('播放时落在唱片上，暂停时抬起', 'Rests on the disc while playing, lifts on pause'),
@@ -171,31 +166,12 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
     // size and opacity with distance. Rows are rebuilt only when the window
     // actually moves.
     const lyricsBox = document.createElement('div');
-    lyricsBox.style.cssText = 'display:flex;flex-direction:column;gap:0.55em;overflow:hidden;min-height:0;';
+    lyricsBox.style.cssText = 'display:flex;flex-direction:column;gap:0.9em;overflow:hidden;min-height:0;';
 
     const translationEl = document.createElement('div');
     translationEl.style.cssText = 'line-height:1.4;font-weight:400;';
 
-    // Optional audio spectrum: a row of thin bars driven by the host's
-    // analyser, read inside the app's frame loop.
-    const SPECTRUM_BARS = 56;
-    const spectrum = document.createElement('div');
-    spectrum.style.cssText = [
-        'display:none;align-items:flex-end;gap:3px;height:54px;margin-top:2.2em;',
-        'flex:0 0 auto;overflow:hidden;',
-    ].join('');
-    const spectrumBars = [];
-    for (let i = 0; i < SPECTRUM_BARS; i += 1) {
-        const bar = document.createElement('i');
-        bar.style.cssText = [
-            'flex:1 1 0;min-width:2px;background:currentColor;border-radius:2px 2px 0 0;',
-            'transform-origin:bottom;transform:scaleY(0.04);will-change:transform;',
-        ].join('');
-        spectrum.appendChild(bar);
-        spectrumBars.push(bar);
-    }
-
-    textCol.append(lyricsBox, translationEl, spectrum);
+    textCol.append(lyricsBox, translationEl);
 
     const discBox = document.createElement('div');
     discBox.style.cssText = 'flex:0 0 auto;position:relative;';
@@ -290,11 +266,11 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
     scene.appendChild(sheen);
 
     // ---- tonearm -----------------------------------------------------------
-    // A light, thin arm as in the reference: a small pivot disc at the top, a
-    // long straight tube (70% of the arm) that flows into a rounded 30% bend,
-    // and a small capsule head shell. One SVG covering the scene; the whole
-    // arm rotates around the pivot and a CSS transition does the lift on
-    // pause. ViewBox 0..100.
+    // A slim arm like the mobile reference: a small pivot outside the disc,
+    // a long straight tube (70%), then a rounded 30% bend whose head shell
+    // rests on the *vinyl grooves* just outside the label. The whole arm is
+    // liquid-glass: translucent fills over a backdrop blur, and its ink is
+    // tinted with the current artwork's dominant colour.
     const arm = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     arm.setAttribute('viewBox', '0 0 100 100');
     arm.setAttribute('aria-hidden', 'true');
@@ -302,32 +278,53 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
         'position:absolute;inset:0;width:100%;height:100%;overflow:visible;',
         'transform-origin:90% -8%;transform:rotate(-50deg);',
         'transition:transform 0.9s cubic-bezier(0.3, 1.2, 0.45, 1);',
+        'backdrop-filter:blur(5px) saturate(1.15);',
     ].join('');
-    arm.style.filter = 'drop-shadow(0 3px 4px rgba(0,0,0,0.45))';
+    arm.style.filter = 'drop-shadow(0 3px 5px rgba(0,0,0,0.4))';
     scene.appendChild(arm);
 
     const armMarkup = () => [
         '<defs>',
-        '<linearGradient id="vinylArmRod" x1="90" y1="-8" x2="64.6" y2="29" gradientUnits="userSpaceOnUse">',
-        '<stop offset="0" stop-color="#f4f4f6"/><stop offset="1" stop-color="#dcdce0"/></linearGradient>',
+        '<linearGradient id="vinylArmRod" x1="90" y1="-8" x2="77" y2="21.2" gradientUnits="userSpaceOnUse">',
+        '<stop offset="0" style="stop-color:var(--arm-rod0, #f4f4f6)"/>',
+        '<stop offset="1" style="stop-color:var(--arm-rod1, #dcdce0)"/></linearGradient>',
         '</defs>',
         // One continuous rod: pivot -> long straight tube -> rounded elbow ->
-        // short tail -> head. The elbow is filleted (quadratic) so the bend
-        // reads as a smooth curve rather than a kink.
-        '<path d="M 90 -8 L 77.95 18.42 Q 76.5 21.6 73.53 23.45 L 64.6 29"',
-        ' fill="none" stroke="url(#vinylArmRod)" stroke-width="1.9"',
+        // short tail -> head on the grooves.
+        '<path d="M 90 -8 L 85.64 12.07 Q 85 15 82.63 16.83 L 77 21.2"',
+        ' fill="none" stroke="url(#vinylArmRod)" stroke-width="1.9" stroke-opacity="0.94"',
         ' stroke-linecap="round" stroke-linejoin="round"/>',
-        // head shell: a small capsule continuing the lower rod
-        '<g transform="rotate(148 64.6 29)">',
-        '<rect x="59.1" y="26.5" width="11" height="5" rx="2.5" fill="#f2f2f4"/>',
-        '<circle cx="69" cy="29" r="0.95" fill="#3a3a3e"/>',
+        // head shell: a small glass capsule continuing the lower rod
+        '<g transform="rotate(142 77 21.2)">',
+        '<rect x="71.5" y="18.7" width="11" height="5" rx="2.5" style="fill:var(--arm-head, #f2f2f4);fill-opacity:0.88"/>',
+        '<rect x="71.5" y="18.7" width="11" height="2.2" rx="1.1" fill="#ffffff" fill-opacity="0.35"/>',
+        '<circle cx="81.4" cy="21.2" r="0.95" style="fill:var(--arm-stylus, #3a3a3e)"/>',
         '</g>',
-        // pivot: white disc with a dark centre dot
-        '<circle cx="90" cy="-8" r="4.3" fill="#f6f6f8"/>',
-        '<circle cx="90" cy="-8" r="1.8" fill="#2a2a2e"/>',
-        '<circle cx="90" cy="-8" r="4.3" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="0.5"/>',
+        // pivot: a glass disc with a dark centre dot
+        '<circle cx="90" cy="-8" r="4.3" style="fill:var(--arm-pivot, #f6f6f8);fill-opacity:0.9"/>',
+        '<circle cx="90" cy="-8" r="4.3" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="0.45"/>',
+        '<circle cx="90" cy="-8" r="1.8" style="fill:var(--arm-dot, #2a2a2e)"/>',
     ].join('');
     arm.innerHTML = armMarkup();
+
+    // Tint the arm with the artwork colour: pale mixes of it keep the glass
+    // look while clearly belonging to the current song.
+    const setArmColor = (color) => {
+        if (!color) {
+            for (const key of ['--arm-rod0', '--arm-rod1', '--arm-head', '--arm-stylus', '--arm-pivot', '--arm-dot']) {
+                arm.style.removeProperty(key);
+            }
+            return;
+        }
+        const mixW = (t) => mixHex(color, '#ffffff', t);
+        const mixK = (t) => mixHex(color, '#101010', t);
+        arm.style.setProperty('--arm-rod0', mixW(0.66));
+        arm.style.setProperty('--arm-rod1', mixW(0.42));
+        arm.style.setProperty('--arm-head', mixW(0.52));
+        arm.style.setProperty('--arm-stylus', mixK(0.55));
+        arm.style.setProperty('--arm-pivot', mixW(0.55));
+        arm.style.setProperty('--arm-dot', mixK(0.62));
+    };
 
     // ---- state -------------------------------------------------------------
     let disposed = false;
@@ -364,7 +361,6 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
             textScale: num(v.textScale, 1),
             showNext: v.showNext !== false,
             textAlign: v.textAlign === 'center' ? 'center' : 'left',
-            showSpectrum: v.showSpectrum === true,
         };
     };
 
@@ -382,20 +378,20 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
         // typography instead of computing a tiny one off height = 1 (that was
         // the "lyrics start small, then jump" bug on every new song).
         if (height > 8) {
-            const base = Math.round(Math.min(Math.max(height * 0.033, 14), 48) * s.textScale * display.lyricsFontScale);
+            const base = Math.round(Math.min(Math.max(height * 0.0231, 12), 40) * s.textScale * display.lyricsFontScale);
             typography = { base, weight };
         }
 
         textCol.style.fontFamily = stack;
         textCol.style.textAlign = s.textAlign;
         const base = typography.base;
-        titleEl.style.cssText = `font-size:${Math.round(base * 0.4)}px;color:${theme.secondaryColor};opacity:0.75;`
+        // The song title rides with the lyric size; the artist at 80% of it.
+        titleEl.style.cssText = `font-size:${Math.round(base)}px;color:${theme.secondaryColor};opacity:0.85;`
             + `font-weight:600;letter-spacing:0.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
-        artistEl.style.cssText = `font-size:${Math.round(base * 0.34)}px;color:${theme.secondaryColor};opacity:0.55;`
+        artistEl.style.cssText = `font-size:${Math.round(base * 0.8)}px;color:${theme.secondaryColor};opacity:0.55;`
             + 'margin-top:0.35em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
         translationEl.style.cssText = `font-size:${Math.round(base * 0.6)}px;color:${theme.secondaryColor};`
             + 'opacity:0.78;line-height:1.4;font-weight:400;';
-        spectrum.style.color = theme.primaryColor;
     };
 
     // Lines that merely carry song metadata ("标题", "歌手", "标题 - 歌手")
@@ -502,7 +498,7 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
                 const row = document.createElement('div');
                 const active = distance === 0;
                 row.style.cssText = [
-                    'line-height:1.32;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;',
+                    'line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;',
                     `font-size:${Math.round(active ? base : base * 0.8)}px;`,
                     `font-weight:${active ? weight : 600};`,
                     `opacity:${active ? '1' : String(Math.max(0.16, 0.62 - (distance - 1) * 0.15))};`,
@@ -534,7 +530,6 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
 
         translationEl.textContent = translation;
         translationEl.style.display = translation ? '' : 'none';
-        spectrum.style.display = s.showSpectrum ? 'flex' : 'none';
 
         // Re-animate only when the line really changed (the clock ticks far
         // more often than lines change). Keyed on the *shown* line so passing
@@ -639,6 +634,7 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
                 void dominantColor(cover).then((color) => {
                     if (disposed || coverUrlForColor !== cover) return;
                     coverColor = color;
+                    setArmColor(color);
                     applyHalo(diameterPx);
                 });
             }
@@ -648,6 +644,7 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
             labelFallback.style.display = '';
             coverUrlForColor = null;
             coverColor = null;
+            setArmColor(null);
             const song = ctx.song;
             fallbackTitle.textContent = song?.title || '♪';
             fallbackArtist.textContent = song?.artist || '';
@@ -687,7 +684,6 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
 
     // Spectrum: read the analyser inside the app's frame loop (values change
     // every frame and are never announced). Bars fall back down smoothly.
-    const spectrumLevels = new Float32Array(SPECTRUM_BARS);
     const offFrame = ctx.onFrame(() => {
         // Karaoke: light each word up once its end time has passed. The sung
         // colour is the current artwork's dominant colour (theme accent as a
@@ -701,24 +697,6 @@ function mountVinyl(folium, container, ctx, settingsAccess) {
                 const want = sung ? sungColor : '';
                 if (span.style.color !== want) span.style.color = want;
             }
-        }
-        if (!settings().showSpectrum || spectrum.style.display === 'none') return;
-        const data = ctx.audio?.getSpectrum?.();
-        const n = data ? data.length : 0;
-        for (let i = 0; i < SPECTRUM_BARS; i += 1) {
-            let value = 0;
-            if (n > 0) {
-                // Log-ish bucketing so bass does not eat the whole width.
-                const lo = Math.floor((i / SPECTRUM_BARS) ** 1.6 * n);
-                const hi = Math.max(lo + 1, Math.floor(((i + 1) / SPECTRUM_BARS) ** 1.6 * n));
-                let sum = 0;
-                for (let j = lo; j < hi && j < n; j += 1) sum += data[j];
-                value = sum / (hi - lo) / 255;
-            }
-            const prev = spectrumLevels[i] * 0.86;
-            const level = Math.max(value, prev);
-            spectrumLevels[i] = level;
-            spectrumBars[i].style.transform = `scaleY(${(0.04 + level * 0.96).toFixed(3)})`;
         }
     });
 
@@ -944,6 +922,17 @@ const hslToRgb = (h, s, l) => {
 };
 
 const toHex = (r, g, b) => `#${[r, g, b].map((v) => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0')).join('')}`;
+
+// Linear mix of two hex colours, t=0 → a, t=1 → b.
+const mixHex = (a, b, t) => {
+    const ca = hexToRgb(a) || { r: 244, g: 244, b: 246 };
+    const cb = hexToRgb(b) || { r: 255, g: 255, b: 255 };
+    return toHex(
+        Math.round(ca.r + (cb.r - ca.r) * t),
+        Math.round(ca.g + (cb.g - ca.g) * t),
+        Math.round(ca.b + (cb.b - ca.b) * t),
+    );
+};
 
 // One entry per cover URL, so switching back and forth costs nothing.
 const COLOR_CACHE = new Map();
