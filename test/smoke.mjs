@@ -148,6 +148,17 @@ const neighbourTrans = [...container.querySelectorAll('[data-active] ~ * div, * 
 if (!neighbourTrans.includes('五百英里')) throw new Error('neighbour row missing its own translation');
 console.log('per-line translations ok: active + neighbours carry their own');
 
+// Long lyric lines must wrap instead of being truncated with an ellipsis.
+const lineNode = activeRow.firstElementChild;
+if (lineNode.style.whiteSpace !== 'normal') throw new Error(`lyric line still nowrap: ${lineNode.style.whiteSpace}`);
+if (lineNode.style.textOverflow === 'ellipsis') throw new Error('lyric line still ellipsised');
+if (!/break-word|anywhere/.test(`${lineNode.style.overflowWrap}${lineNode.style.wordBreak}`)) {
+    throw new Error('lyric line does not break long words');
+}
+const transNode = activeRow.lastElementChild;
+if (transNode && transNode.style.whiteSpace !== 'normal') throw new Error('translation still nowrap');
+console.log('long lines wrap (lyrics + translation): true');
+
 // Karaoke: the active row of a word-timed line is built from spans.
 const spans = [...activeRow.querySelectorAll('span')];
 if (spans.length !== 2) throw new Error(`expected 2 word spans on the active row, got ${spans.length}`);

@@ -1,9 +1,48 @@
 # folium-compound 模组提交 · 粘贴用文案
 
-表单地址：https://github.com/chthollyphile/folium-compound/issues/new?template=mod-submission.yml
-标题：`[模组提交] 黑胶唱片 vinyl-disc`
+初次提交（已完成，issue #69，已 signed）：https://github.com/chthollyphile/folium-compound/issues/69
+
+## 模组更新表单
+
+表单地址：https://github.com/chthollyphile/folium-compound/issues/new?template=mod-update.yml
+标题：`[模组更新] 黑胶唱片 vinyl-disc`
+
+### 模组 id / Mod id
+
+```
+vinyl-disc
+```
+
+### 版本 / Version (tag or commit)
+
+```
+v1.7.8
+```
+
+### 发布渠道 / Channel
+
+```
+保持不变 / Keep current
+```
+
+### 更新说明 / What changed
+
+```
+1. 过长的歌词句改为自动换行，不再被省略号截断隐藏；每句下方的翻译同样支持换行。
+2. （v1.7.7 内容）翻译跟随每一句歌词：多行歌词视图里每一句下方显示各自的翻译，不再只显示当前句的翻译。
+3. （v1.7.7 内容）修复唱针周围出现矩形瑕疵的问题（CSS drop-shadow 滤镜在元素框边界裁剪、WebKit 合成层裁剪旋转内容，改为扩大 SVG 画布 + SVG 内部滤镜）。
+4. （v1.7.7 内容）默认值调整：封面占比 0.6、中心孔默认关闭、歌词字号 1.25；预览图换为真实播放页截图。
+
+权限无变化：permissions 仍为空数组 []，不联网、不上传用户数据、不执行远程代码。
+```
+
+### 确认 / Confirmations
+
+勾选唯一一项（新版本同样不收集或上传用户数据，也不下载并执行远程代码）。
 
 ---
+
+## 初次提交字段（存档）
 
 ## 模组 id / Mod id
 
