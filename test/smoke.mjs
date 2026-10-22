@@ -24,7 +24,7 @@ const listeners = { change: [], resize: [], time: [], settings: [], frame: [] };
 let lineIndex = 0;
 let lyricT = null; // override for the lyric clock (null -> lineIndex * 4)
 let paused = false;
-let sectionValues = {
+let settingsValues = {
     discSide: 'right', discSize: 0.8, spinSeconds: 20, labelRatio: 0.42,
     showArm: true, sheen: true, halo: 'cover', textScale: 1, showNext: true,
 };
@@ -65,7 +65,7 @@ const ctx = {
     getTheme: () => theme,
     getCoverUrl: () => 'https://example.com/cover.jpg',
     getDisplay: () => ({ showText: true, lyricsFontScale: 1.1 }),
-    getSettings: () => { throw new Error('visualizer must read the section, not ctx.getSettings'); },
+    getSettings: () => ({ ...settingsValues }),
     onChange: (fn) => { listeners.change.push(fn); return () => {}; },
     onResize: (fn) => { listeners.resize.push(fn); return () => {}; },
     onLyricTime: (fn) => { listeners.time.push(fn); return () => {}; },
@@ -85,25 +85,7 @@ const folium = {
         visualizers: { register: (def) => { registered.visualizer = def; return { id: 'mod:vinyl-disc:disc', unregister() {} }; } },
         stageLayers: { register: () => { throw new Error('must not register a stage layer'); } },
         settingsSections: {
-            register: (def) => {
-                registered.section = def;
-                return {
-                    id: 'mod:vinyl-disc:settings',
-                    unregister() {},
-                    settings: {
-                        get: () => ({ ...sectionValues }),
-                        set: (patch) => {
-                            sectionValues = { ...sectionValues, ...patch };
-                            listeners.settings.forEach((fn) => fn());
-                        },
-                        reset: () => {
-                            sectionValues = {};
-                            listeners.settings.forEach((fn) => fn());
-                        },
-                        onChange: (fn) => { listeners.settings.push(fn); return () => {}; },
-                    },
-                };
-            },
+            register: () => { throw new Error('settings must live on the visualizer, not a settings section'); },
         },
     },
 };
@@ -113,12 +95,17 @@ const { default: activate } = await import(pathToFileURL(modPath).href);
 activate(folium);
 
 const v = registered.visualizer;
-const section = registered.section;
 if (!v || v.id !== 'disc') throw new Error('visualizer not registered as id "disc"');
-if (v.settings !== undefined) throw new Error('visualizer must not carry its own settings schema');
-if (!section?.settingsPanel) throw new Error('settings section missing a settingsPanel');
+const vSettings = v.settings;
+if (!Array.isArray(vSettings) || vSettings.length !== 11) {
+    throw new Error(`visualizer must carry the settings schema (11 fields), got ${vSettings?.length}`);
+}
+const defOf = (key) => vSettings.find((s) => s.key === key);
+if (defOf('labelRatio').defaultValue !== 0.6) throw new Error('labelRatio default should be 0.6');
+if (defOf('showSpindle').defaultValue !== false) throw new Error('showSpindle default should be false');
+if (defOf('textScale').defaultValue !== 1.25) throw new Error('textScale default should be 1.25');
 console.log('mode id: disc | label:', v.label['zh-CN'], '| hostLayers:', JSON.stringify(v.hostLayers));
-console.log('section settings:', section.settings.length, 'fields:', section.settings.map((s) => s.key).join(', '));
+console.log('visualizer settings:', vSettings.length, 'fields:', vSettings.map((s) => s.key).join(', '));
 
 // Mount the visualizer into a container and drive it.
 const container = document.getElementById('root');
@@ -223,35 +210,17 @@ if (!armEl || armEl.style.transform !== 'rotate(-50deg)') {
 if (!armEl.outerHTML.includes('vinylArmShadow')) throw new Error('arm shadow filter missing (rectangle fix)');
 console.log('arm on pause: rotate(-50deg), in-SVG shadow ok');
 
-// Settings section changes reach the stage.
-sectionValues = { ...sectionValues, discSide: 'left' };
-listeners.settings.forEach((fn) => fn());
-listeners.change.forEach((fn) => fn());
-
-// Settings panel: draft edits stay local until 保存 writes through.
-const panelHost = document.createElement('div');
-document.body.appendChild(panelHost);
-const setCalls = [];
-const panelCtx = {
-    locale: 'zh-CN',
-    getTheme: () => theme,
-    settings: {
-        get: () => ({ ...sectionValues }),
-        set: (patch) => { setCalls.push(patch); },
-        reset: () => {},
-    },
-};
-registered.section.settingsPanel(panelHost, panelCtx);
-const checkbox = panelHost.querySelector('input[type=checkbox]');
-checkbox.checked = false;
-checkbox.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
-const savedBefore = setCalls.length;
-const saveBtn = [...panelHost.querySelectorAll('button')].find((b) => b.textContent === '保存');
-if (!saveBtn) throw new Error('panel has no 保存 button');
-saveBtn.click();
-if (setCalls.length !== savedBefore + 1) throw new Error('保存 did not write the draft through');
-console.log(`panel draft->save writes through: true (${checkbox.dataset ? '' : ''}showSpindle n/a -> checkbox toggle saved)`);
-sectionValues = { ...sectionValues, ...setCalls[setCalls.length - 1] };
+// Live-apply style-panel settings: the host auto-saves silently, the mod must
+// pick the change up in the frame loop without any notification.
+const stageEl = [...container.children].find((el) => el.tagName === 'DIV' && el.style.position === 'absolute');
+if (!stageEl) throw new Error('stage element not found');
+const before = stageEl.style.flexDirection;
+settingsValues = { ...settingsValues, discSide: 'left' };
+listeners.frame.forEach((fn) => fn());
+if (stageEl.style.flexDirection !== 'row-reverse') {
+    throw new Error(`settings change not applied live: ${before} -> ${stageEl.style.flexDirection}`);
+}
+console.log(`style-panel settings apply live: ${before} -> ${stageEl.style.flexDirection}`);
 
 dispose();
 console.log('SMOKE TEST OK');
