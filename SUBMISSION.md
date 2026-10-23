@@ -147,3 +147,20 @@ MIT
 - 预览图：真实播放页截图，1280×720 JPEG，约 126 KB（市场要求 ≤1 MB，16:9）
 - `permissions: []`、`folia: >=0.7.21 <0.8.0`（本机 Folia 0.7.21 在范围内）
 - 冒烟测试：`test/smoke.mjs` 全部通过（注册、多行歌词、逐字扫色、每句翻译、元数据过滤、极小尺寸保护、空档保留、面板草稿→保存）
+
+---
+
+## 审查回复（1.7.10，粘到 issue #73）
+
+谢谢审查，两点都已改，新版本 v1.7.10（commit e4f1e27）。
+
+必改项：移除每帧轮询
+- 删掉了 ctx.onFrame 里的 JSON.stringify(settings()) 比对和 lastSettingsKey，设置变化回到已有的 ctx.onChange 回调（refreshAll(false)）即时生效。
+- 补充：我这边没能复现「收不到通知」的情况；写那段轮询是因为当时不确定宿主是否通知，属于防御性冗余。按说明以 ctx.onChange 为准。
+- 冒烟测试同步改成模拟 ctx.onChange 后断言重排（discSide right -> left 后舞台方向 row -> row-reverse），通过。
+
+建议项
+- 更新说明与本文件、README 都已补一句：设置从设置区块迁移到动画模式自己的设置后，旧版本调过的值不会带过来，升级后回到默认值。
+- client.mjs 里遗留的「Spectrum: read the analyser…」注释已删；ctx.onFrame 的注释改为只描述逐字歌词（逐字时间与扫色需要逐帧读 ctx.lyricTime）。
+
+版本号 v1.7.10（高于当前 v1.7.9），请按新 tag 重新取一次。
