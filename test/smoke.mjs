@@ -210,17 +210,17 @@ if (!armEl || armEl.style.transform !== 'rotate(-50deg)') {
 if (!armEl.outerHTML.includes('vinylArmShadow')) throw new Error('arm shadow filter missing (rectangle fix)');
 console.log('arm on pause: rotate(-50deg), in-SVG shadow ok');
 
-// Live-apply style-panel settings: the host auto-saves silently, the mod must
-// pick the change up in the frame loop without any notification.
+// Live-apply style-panel settings: the host notifies through ctx.onChange
+// (no per-frame polling in the mod).
 const stageEl = [...container.children].find((el) => el.tagName === 'DIV' && el.style.position === 'absolute');
 if (!stageEl) throw new Error('stage element not found');
 const before = stageEl.style.flexDirection;
 settingsValues = { ...settingsValues, discSide: 'left' };
-listeners.frame.forEach((fn) => fn());
+listeners.change.forEach((fn) => fn());
 if (stageEl.style.flexDirection !== 'row-reverse') {
-    throw new Error(`settings change not applied live: ${before} -> ${stageEl.style.flexDirection}`);
+    throw new Error(`settings change not applied on ctx.onChange: ${before} -> ${stageEl.style.flexDirection}`);
 }
-console.log(`style-panel settings apply live: ${before} -> ${stageEl.style.flexDirection}`);
+console.log(`style-panel settings apply via ctx.onChange: ${before} -> ${stageEl.style.flexDirection}`);
 
 dispose();
 console.log('SMOKE TEST OK');

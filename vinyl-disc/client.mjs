@@ -682,26 +682,17 @@ function mountVinyl(folium, container, ctx) {
         refreshAll(false);
     });
 
+    // Style-panel settings and play state both arrive here: the host wires the
+    // visualizer's settings access into the stage context, so a change in the
+    // panel notifies this listener (Folium 0.7.21+).
     const offChange = ctx.onChange(() => {
         paused = ctx.isPaused();
         refreshAll(false);
     });
 
-    // The host auto-saves style-panel changes and applies them live, but does
-    // not announce them through ctx.onChange. Poll the values every frame with
-    // a cheap key compare and refresh when they move.
-    let lastSettingsKey = JSON.stringify(settings());
-
-    // Spectrum: read the analyser inside the app's frame loop (values change
-    // every frame and are never announced). Bars fall back down smoothly.
+    // Karaoke timing only: the lyric clock and the sung colours change every
+    // frame (and are never announced), so they are read here.
     const offFrame = ctx.onFrame(() => {
-        // Live-apply style-panel settings: the host auto-saves but does not
-        // announce changes, so poll with a cheap key compare every frame.
-        const key = JSON.stringify(settings());
-        if (key !== lastSettingsKey) {
-            lastSettingsKey = key;
-            refreshAll(false);
-        }
         // Karaoke: each word's sung colour sweeps in smoothly across the
         // glyph as the word is sung (--wp 0% -> 100%), with a gentle scale
         // pop while the word is active. The sung colour is the current
