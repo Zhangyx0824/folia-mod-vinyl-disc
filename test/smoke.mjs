@@ -222,5 +222,21 @@ if (stageEl.style.flexDirection !== 'row-reverse') {
 }
 console.log(`style-panel settings apply via ctx.onChange: ${before} -> ${stageEl.style.flexDirection}`);
 
+// Home backdrop ("墙后的画面"): the host blurs the layer with an inline
+// ancestor filter; the mod must drop into ambient mode (disc/arm/sheen/spindle
+// hidden, halo kept) while blurred, and restore them when sharp again.
+const discEl = [...stageEl.querySelectorAll('div')].find((el) => !!el.style.getPropertyValue('--vinyl-spin'));
+if (!discEl) throw new Error('disc element not found');
+const host = document.createElement('div');
+host.style.filter = 'blur(24px)';
+container.replaceWith(host);
+host.appendChild(container);
+listeners.frame.forEach((fn) => fn());
+if (discEl.style.display !== 'none') throw new Error(`ambient mode not engaged behind blurred wall: ${discEl.style.display}`);
+host.style.filter = '';
+listeners.frame.forEach((fn) => fn());
+if (discEl.style.display === 'none') throw new Error('ambient mode not released when sharp');
+console.log('home-backdrop ambient mode: disc hidden while blurred, restored when sharp');
+
 dispose();
 console.log('SMOKE TEST OK');
